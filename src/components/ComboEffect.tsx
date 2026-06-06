@@ -1,10 +1,12 @@
 import { cn } from '@/lib/utils';
 import type { ComboSkill } from '@/types/game';
-import { ELEMENTS, RARITY_BG } from '@/data/gameData';
+import { ELEMENTS, RARITY_BG, CATEGORY_NAMES, CATEGORY_COLORS } from '@/data/gameData';
 
 interface ComboEffectProps {
   combo: ComboSkill;
   show: boolean;
+  level?: number;
+  cooldown?: number;
 }
 
 const RARITY_GLOW = {
@@ -45,11 +47,13 @@ const RARITY_NAMES: Record<string, string> = {
   legendary: '传说',
 };
 
-export default function ComboEffect({ combo, show }: ComboEffectProps) {
+export default function ComboEffect({ combo, show, level = 1, cooldown }: ComboEffectProps) {
   if (!show) return null;
 
   const e1 = ELEMENTS[combo.elements[0]];
   const e2 = ELEMENTS[combo.elements[1]];
+  const categoryName = CATEGORY_NAMES[combo.category] || combo.category;
+  const categoryColor = CATEGORY_COLORS[combo.category] || 'text-gray-400';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
@@ -116,8 +120,8 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
           <div className="absolute bottom-3 right-3 text-2xl opacity-50">{e2.icon}</div>
 
           <div className="relative z-10 text-center">
-            {/* 稀有度标签 */}
-            <div className="mb-4">
+            {/* 标签区域 */}
+            <div className="flex items-center justify-center gap-3 mb-4">
               <span
                 className={cn(
                   'inline-block px-6 py-1 rounded-full text-sm font-bold tracking-[0.3em]',
@@ -128,6 +132,20 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
               >
                 {RARITY_NAMES[combo.rarity]}
               </span>
+              <span
+                className={cn(
+                  'inline-block px-4 py-1 rounded-full text-sm font-semibold',
+                  'bg-slate-700/80 border border-slate-600',
+                  categoryColor
+                )}
+              >
+                {categoryName}
+              </span>
+              {level > 1 && (
+                <span className="inline-block px-3 py-1 rounded-full text-sm font-bold bg-amber-500/80 text-white">
+                  Lv.{level}
+                </span>
+              )}
             </div>
 
             {/* 技能名称 */}
@@ -191,7 +209,7 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
             </p>
 
             {/* 属性数值 */}
-            <div className="flex items-center justify-center gap-8">
+            <div className="flex items-center justify-center gap-6 flex-wrap">
               <div className="text-center">
                 <div className="text-4xl font-black text-red-400 drop-shadow-lg">
                   {combo.damage}
@@ -199,11 +217,11 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
                 <div className="text-sm text-white/50 mt-1">伤害</div>
               </div>
 
-              {combo.effect && combo.effectValue && (
+              {combo.effect && combo.effectValue !== undefined && (
                 <div className="w-px h-12 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
               )}
 
-              {combo.effect && combo.effectValue && (
+              {combo.effect && combo.effectValue !== undefined && (
                 <div className="text-center">
                   <div className="text-4xl font-black text-purple-400 drop-shadow-lg">
                     {combo.effectValue}
@@ -216,6 +234,11 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
                     {combo.effect === 'heal' && '治疗'}
                     {combo.effect === 'shield' && '护盾'}
                     {combo.effect === 'draw' && '抽牌'}
+                    {combo.effect === 'lifesteal' && '吸血'}
+                    {combo.effect === 'thorns' && '反伤'}
+                    {combo.effect === 'absorb' && '吸收'}
+                    {combo.effect === 'weakness' && '虚弱'}
+                    {combo.effect === 'strength' && '强化'}
                   </div>
                 </div>
               )}
@@ -228,6 +251,18 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
                       {combo.effectDuration}
                     </div>
                     <div className="text-sm text-white/50 mt-1">回合</div>
+                  </div>
+                </>
+              )}
+
+              {cooldown !== undefined && cooldown > 0 && (
+                <>
+                  <div className="w-px h-12 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
+                  <div className="text-center">
+                    <div className="text-4xl font-black text-amber-400 drop-shadow-lg">
+                      {cooldown}
+                    </div>
+                    <div className="text-sm text-white/50 mt-1">冷却</div>
                   </div>
                 </>
               )}

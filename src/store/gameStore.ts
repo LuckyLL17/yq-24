@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES } from '@/data/gameData';
+import type { GameState, Card, ComboSkill, Player, GameMode, StatusEffect } from '@/types/game';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS } from '@/data/gameData';
 
 interface GameActions {
   startBattle: (mode?: GameMode) => void;
@@ -28,6 +28,11 @@ interface GameActions {
   addFloatingText: (type: 'damage' | 'heal' | 'shield', value: number, target: 'player' | 'enemy') => void;
   removeFloatingText: (id: string) => void;
   setShaking: (target: 'player' | 'enemy', value: boolean) => void;
+  getComboCooldown: (comboId: string) => number;
+  isComboOnCooldown: (comboId: string) => boolean;
+  upgradeCombo: (comboId: string) => boolean;
+  getCurrentComboLevel: (comboId: string) => number;
+  applyPlayerStatusEffects: () => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -140,7 +145,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const combo = findCombo(card1.element, card2.element);
     if (!combo) return;
 
-    set({ isAnimating: true, currentCombo: combo, showComboEffect: true });
+    if (get().isComboOnCooldown(combo.id)) return;
+
+    const level = get().getCurrentComboLevel(combo.id);
+    const effectiveCombo = getComboWithLevel(combo, level);
+
+    set({ isAnimating: true, currentCombo: effectiveCombo, showComboEffect: true });
 
     const newHand = player.hand.filter((c) => c.id !== card1.id && c.id !== card2.id);
     const newDeck = [...player.deck];
@@ -150,23 +160,43 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const currentEnemy = state.enemy;
       if (!currentEnemy) return;
 
-      let damage = combo.damage;
-      const newStatusEffects = [...currentEnemy.statusEffects];
+      let damage = effectiveCombo.damage;
+      const newEnemyStatusEffects = [...currentEnemy.statusEffects];
+      const newPlayerStatusEffects = [...state.player.statusEffects];
 
-      if (combo.effect && combo.effectValue && combo.effectDuration) {
-        if (combo.effect === 'burn' || combo.effect === 'poison' || combo.effect === 'freeze' || combo.effect === 'stun') {
-          const existingIndex = newStatusEffects.findIndex((e) => e.type === combo.effect);
+      if (effectiveCombo.effect && effectiveCombo.effectValue && effectiveCombo.effectDuration !== undefined) {
+        const debuffEffects = ['burn', 'poison', 'freeze', 'stun', 'weakness'] as const;
+        if (debuffEffects.includes(effectiveCombo.effect as typeof debuffEffects[number])) {
+          const existingIndex = newEnemyStatusEffects.findIndex((e) => e.type === effectiveCombo.effect);
           if (existingIndex >= 0) {
-            newStatusEffects[existingIndex] = {
-              ...newStatusEffects[existingIndex],
-              value: newStatusEffects[existingIndex].value + combo.effectValue,
-              duration: Math.max(newStatusEffects[existingIndex].duration, combo.effectDuration),
+            newEnemyStatusEffects[existingIndex] = {
+              ...newEnemyStatusEffects[existingIndex],
+              value: newEnemyStatusEffects[existingIndex].value + (effectiveCombo.effectValue || 0),
+              duration: Math.max(newEnemyStatusEffects[existingIndex].duration, effectiveCombo.effectDuration || 0),
             };
           } else {
-            newStatusEffects.push({
-              type: combo.effect,
-              value: combo.effectValue,
-              duration: combo.effectDuration,
+            newEnemyStatusEffects.push({
+              type: effectiveCombo.effect,
+              value: effectiveCombo.effectValue,
+              duration: effectiveCombo.effectDuration,
+            });
+          }
+        }
+
+        const buffEffects = ['thorns', 'strength'] as const;
+        if (buffEffects.includes(effectiveCombo.effect as typeof buffEffects[number]) && effectiveCombo.effectDuration > 0) {
+          const existingIndex = newPlayerStatusEffects.findIndex((e) => e.type === effectiveCombo.effect);
+          if (existingIndex >= 0) {
+            newPlayerStatusEffects[existingIndex] = {
+              ...newPlayerStatusEffects[existingIndex],
+              value: newPlayerStatusEffects[existingIndex].value + (effectiveCombo.effectValue || 0),
+              duration: Math.max(newPlayerStatusEffects[existingIndex].duration, effectiveCombo.effectDuration || 0),
+            };
+          } else {
+            newPlayerStatusEffects.push({
+              type: effectiveCombo.effect,
+              value: effectiveCombo.effectValue,
+              duration: effectiveCombo.effectDuration,
             });
           }
         }
@@ -174,19 +204,23 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
       let newEnemyHp = currentEnemy.hp;
       let newEnemyShield = currentEnemy.shield;
+      let actualDamageDealt = 0;
 
       if (damage > 0) {
         if (newEnemyShield >= damage) {
           newEnemyShield -= damage;
+          actualDamageDealt = damage;
           damage = 0;
         } else {
+          const beforeDamage = damage;
           damage -= newEnemyShield;
           newEnemyShield = 0;
           newEnemyHp -= damage;
+          actualDamageDealt = beforeDamage;
         }
       }
 
-      get().addFloatingText('damage', combo.damage, 'enemy');
+      get().addFloatingText('damage', effectiveCombo.damage, 'enemy');
       set({ enemyShaking: true });
       setTimeout(() => set({ enemyShaking: false }), 500);
 
@@ -194,16 +228,26 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       let newPlayerShield = state.player.shield;
       let cardsToDraw = 0;
 
-      if (combo.effect === 'heal' && combo.effectValue) {
-        newPlayerHp = Math.min(state.player.maxHp, newPlayerHp + combo.effectValue);
-        get().addFloatingText('heal', combo.effectValue, 'player');
+      if (effectiveCombo.effect === 'heal' && effectiveCombo.effectValue) {
+        newPlayerHp = Math.min(state.player.maxHp, newPlayerHp + effectiveCombo.effectValue);
+        get().addFloatingText('heal', effectiveCombo.effectValue, 'player');
       }
-      if (combo.effect === 'shield' && combo.effectValue) {
-        newPlayerShield += combo.effectValue;
-        get().addFloatingText('shield', combo.effectValue, 'player');
+      if (effectiveCombo.effect === 'shield' && effectiveCombo.effectValue) {
+        newPlayerShield += effectiveCombo.effectValue;
+        get().addFloatingText('shield', effectiveCombo.effectValue, 'player');
       }
-      if (combo.effect === 'draw' && combo.effectValue) {
-        cardsToDraw = combo.effectValue;
+      if (effectiveCombo.effect === 'draw' && effectiveCombo.effectValue) {
+        cardsToDraw = effectiveCombo.effectValue;
+      }
+      if (effectiveCombo.effect === 'lifesteal' && effectiveCombo.effectValue) {
+        const healAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
+        newPlayerHp = Math.min(state.player.maxHp, newPlayerHp + healAmount);
+        get().addFloatingText('heal', healAmount, 'player');
+      }
+      if (effectiveCombo.effect === 'absorb' && effectiveCombo.effectValue) {
+        const absorbAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
+        newPlayerShield += absorbAmount;
+        get().addFloatingText('shield', absorbAmount, 'player');
       }
 
       const finalDeck = [...newDeck];
@@ -214,6 +258,17 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
       const isEnemyDead = newEnemyHp <= 0;
 
+      const newCooldowns = [...state.player.comboCooldowns];
+      const existingCooldownIndex = newCooldowns.findIndex((c) => c.comboId === combo.id);
+      if (existingCooldownIndex >= 0) {
+        newCooldowns[existingCooldownIndex] = {
+          ...newCooldowns[existingCooldownIndex],
+          remaining: combo.cooldown,
+        };
+      } else {
+        newCooldowns.push({ comboId: combo.id, remaining: combo.cooldown });
+      }
+
       set((s) => ({
         enemy: isEnemyDead
           ? null
@@ -221,7 +276,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
               ...currentEnemy,
               hp: Math.max(0, newEnemyHp),
               shield: newEnemyShield,
-              statusEffects: newStatusEffects,
+              statusEffects: newEnemyStatusEffects,
             },
         player: {
           ...s.player,
@@ -230,6 +285,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           hand: finalHand,
           deck: finalDeck,
           selectedCards: [],
+          statusEffects: newPlayerStatusEffects,
+          comboCooldowns: newCooldowns,
         },
         comboHistory: [...s.comboHistory, combo],
         isAnimating: false,
@@ -238,7 +295,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
       if (mode === 'challenge' || mode === 'endless') {
         get().incrementStreak();
-        get().addScore(combo.damage * 10);
+        get().addScore(effectiveCombo.damage * 10);
       }
 
       if (isEnemyDead) {
@@ -265,6 +322,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     if ((stunned && stunned.duration > 0) || (frozen && frozen.duration > 0)) {
       setTimeout(() => {
         get().applyStatusEffects();
+        get().applyPlayerStatusEffects();
         get().nextTurn();
       }, 800);
       return;
@@ -285,12 +343,28 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }
     }
 
+    let thornsDamage = 0;
+    const thorns = player.statusEffects.find((e) => e.type === 'thorns');
+    if (thorns && thorns.value > 0) {
+      thornsDamage = thorns.value;
+    }
+
+    let newEnemyHp = enemy.hp;
+    if (thornsDamage > 0) {
+      newEnemyHp = Math.max(0, enemy.hp - thornsDamage);
+      get().addFloatingText('damage', thornsDamage, 'enemy');
+    }
+
     set((state) => ({
       player: {
         ...state.player,
         hp: Math.max(0, newPlayerHp),
         shield: newPlayerShield,
       },
+      enemy: state.enemy ? {
+        ...state.enemy,
+        hp: newEnemyHp,
+      } : state.enemy,
     }));
 
     if (damage > 0) {
@@ -305,7 +379,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         set({ phase: 'defeat' });
         return;
       }
+      if (state.enemy && state.enemy.hp <= 0) {
+        if (mode === 'classic' || mode === 'quick') {
+          set({ phase: 'victory' });
+        } else {
+          get().nextWave();
+        }
+        return;
+      }
       state.applyStatusEffects();
+      state.applyPlayerStatusEffects();
       if (mode === 'challenge' || mode === 'endless') {
         get().resetStreak();
       }
@@ -314,14 +397,24 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   nextTurn: () => {
-    set((state) => ({
-      turn: state.turn + 1,
-      player: {
-        ...state.player,
-        mana: state.player.maxMana,
-        shield: 0,
-      },
-    }));
+    set((state) => {
+      const newCooldowns = state.player.comboCooldowns
+        .map((cd) => ({
+          ...cd,
+          remaining: cd.remaining - 1,
+        }))
+        .filter((cd) => cd.remaining > 0);
+
+      return {
+        turn: state.turn + 1,
+        player: {
+          ...state.player,
+          mana: state.player.maxMana,
+          shield: 0,
+          comboCooldowns: newCooldowns,
+        },
+      };
+    });
     get().drawCards(2);
   },
 
@@ -492,5 +585,68 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     } else {
       set({ enemyShaking: value });
     }
+  },
+
+  getComboCooldown: (comboId: string) => {
+    const { player } = get();
+    const cooldown = player.comboCooldowns.find((c) => c.comboId === comboId);
+    return cooldown ? cooldown.remaining : 0;
+  },
+
+  isComboOnCooldown: (comboId: string) => {
+    return get().getComboCooldown(comboId) > 0;
+  },
+
+  upgradeCombo: (comboId: string) => {
+    const { player } = get();
+    const combo = COMBOS.find((c) => c.id === comboId);
+    if (!combo || !combo.canUpgrade || !combo.upgrades) return false;
+
+    const currentLevel = get().getCurrentComboLevel(comboId);
+    const maxLevel = combo.upgrades.length + 1;
+    if (currentLevel >= maxLevel) return false;
+
+    set((state) => {
+      const newLevels = [...state.player.comboLevels];
+      const existingIndex = newLevels.findIndex((l) => l.comboId === comboId);
+      if (existingIndex >= 0) {
+        newLevels[existingIndex] = {
+          ...newLevels[existingIndex],
+          level: newLevels[existingIndex].level + 1,
+        };
+      } else {
+        newLevels.push({ comboId, level: 2 });
+      }
+      return {
+        player: {
+          ...state.player,
+          comboLevels: newLevels,
+        },
+      };
+    });
+    return true;
+  },
+
+  getCurrentComboLevel: (comboId: string) => {
+    const { player } = get();
+    return getComboLevel(comboId, player.comboLevels);
+  },
+
+  applyPlayerStatusEffects: () => {
+    set((state) => {
+      const newEffects = state.player.statusEffects
+        .map((effect) => ({
+          ...effect,
+          duration: effect.duration - 1,
+        }))
+        .filter((e) => e.duration > 0);
+
+      return {
+        player: {
+          ...state.player,
+          statusEffects: newEffects,
+        },
+      };
+    });
   },
 }));

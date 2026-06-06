@@ -2,6 +2,30 @@ export type ElementType = 'fire' | 'water' | 'earth' | 'wind' | 'lightning' | 'l
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+export type ComboCategory = 
+  | 'attack' 
+  | 'defense' 
+  | 'heal' 
+  | 'control' 
+  | 'lifesteal' 
+  | 'thorns' 
+  | 'absorb' 
+  | 'utility';
+
+export type EffectType = 
+  | 'burn' 
+  | 'freeze' 
+  | 'poison' 
+  | 'stun' 
+  | 'heal' 
+  | 'shield' 
+  | 'draw'
+  | 'lifesteal'
+  | 'thorns'
+  | 'absorb'
+  | 'weakness'
+  | 'strength';
+
 export interface Card {
   id: string;
   element: ElementType;
@@ -11,23 +35,45 @@ export interface Card {
   rarity: Rarity;
 }
 
+export interface ComboUpgrade {
+  level: number;
+  damageBonus: number;
+  effectValueBonus?: number;
+  effectDurationBonus?: number;
+  description: string;
+}
+
 export interface ComboSkill {
   id: string;
   elements: [ElementType, ElementType];
   name: string;
   description: string;
   damage: number;
-  effect?: 'burn' | 'freeze' | 'poison' | 'stun' | 'heal' | 'shield' | 'draw';
+  effect?: EffectType;
   effectValue?: number;
   effectDuration?: number;
   rarity: Rarity;
   effectType: 'firestorm' | 'vinewrap' | 'steamburst' | 'sandstorm' | 'lavaeruption' | 'icestorm' | 'thunderstrike' | 'holylight' | 'shadowflame' | 'thundercloud' | 'prismbeam' | 'voidstorm' | 'earthquake' | 'divineguard' | 'shadowbind' | 'galeforce' | 'blessing' | 'darkwhisper' | 'thunderbolt' | 'solarflare' | 'abyssalvoid';
+  category: ComboCategory;
+  cooldown: number;
+  canUpgrade: boolean;
+  upgrades?: ComboUpgrade[];
 }
 
 export interface StatusEffect {
-  type: 'burn' | 'freeze' | 'poison' | 'stun' | 'shield';
+  type: EffectType;
   value: number;
   duration: number;
+}
+
+export interface ComboCooldown {
+  comboId: string;
+  remaining: number;
+}
+
+export interface PlayerComboState {
+  comboId: string;
+  level: number;
 }
 
 export type AvatarType = 
@@ -59,6 +105,8 @@ export interface Player extends Combatant {
   selectedCards: Card[];
   mana: number;
   maxMana: number;
+  comboCooldowns: ComboCooldown[];
+  comboLevels: PlayerComboState[];
 }
 
 export interface Enemy extends Combatant {

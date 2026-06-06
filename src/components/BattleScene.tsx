@@ -2,7 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
-import { findCombo, ELEMENTS } from '@/data/gameData';
+import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboLevel, getComboWithLevel } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 
 export default function BattleScene() {
@@ -24,6 +24,9 @@ export default function BattleScene() {
     floatingTexts,
     enemyShaking,
     playerShaking,
+    isComboOnCooldown,
+    getComboCooldown,
+    getCurrentComboLevel,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -32,7 +35,12 @@ export default function BattleScene() {
     ? findCombo(selectedCards[0].element, selectedCards[1].element)
     : null;
 
-  const canPlay = selectedCards.length === 2 && previewCombo && !isAnimating;
+  const previewLevel = previewCombo ? getCurrentComboLevel(previewCombo.id) : 1;
+  const previewCooldown = previewCombo ? getComboCooldown(previewCombo.id) : 0;
+  const effectivePreviewCombo = previewCombo ? getComboWithLevel(previewCombo, previewLevel) : null;
+  const isOnCooldown = previewCombo ? isComboOnCooldown(previewCombo.id) : false;
+
+  const canPlay = selectedCards.length === 2 && previewCombo && !isAnimating && !isOnCooldown;
 
   const handleCardClick = (card: typeof selectedCards[0]) => {
     if (isAnimating) return;
@@ -212,16 +220,67 @@ export default function BattleScene() {
         {/* 组合预览 */}
         {previewCombo && selectedCards.length === 2 && (
           <div className="text-center mb-4 animate-rise">
-            <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-gradient-to-r from-purple-900/70 via-indigo-900/70 to-purple-900/70 border border-purple-400/40 shadow-lg shadow-purple-500/20">
+            <div className={cn(
+              'inline-flex items-center gap-3 px-6 py-2 rounded-full border shadow-lg',
+              isOnCooldown
+                ? 'bg-gradient-to-r from-slate-800/70 via-slate-700/70 to-slate-800/70 border-slate-500/40 shadow-slate-500/20'
+                : 'bg-gradient-to-r from-purple-900/70 via-indigo-900/70 to-purple-900/70 border-purple-400/40 shadow-purple-500/20'
+            )}>
               <span className="text-lg">{ELEMENTS[previewCombo.elements[0]].icon}</span>
               <span className="text-amber-400">+</span>
               <span className="text-lg">{ELEMENTS[previewCombo.elements[1]].icon}</span>
               <span className="text-white/60 mx-1">=</span>
-              <span className="text-gradient-gold font-bold text-lg" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <span className={cn(
+                'font-bold text-lg',
+                isOnCooldown ? 'text-slate-400' : 'text-gradient-gold'
+              )} style={{ fontFamily: "'Cinzel Decorative', serif" }}>
                 {previewCombo.name}
               </span>
-              <span className="text-white/50 text-sm ml-2">- {previewCombo.description.slice(0, 20)}...</span>
+              <span className={cn(
+                'px-2 py-0.5 rounded text-xs font-semibold',
+                CATEGORY_COLORS[previewCombo.category],
+                'bg-slate-700/60'
+              )}>
+                {CATEGORY_NAMES[previewCombo.category]}
+              </span>
+              {previewLevel > 1 && (
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/80 text-white">
+                  Lv.{previewLevel}
+                </span>
+              )}
+              {isOnCooldown && (
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-500/80 text-white">
+                  冷却 {previewCooldown}
+                </span>
+              )}
             </div>
+            {effectivePreviewCombo && (
+              <div className="flex justify-center gap-4 mt-2 text-sm">
+                <span className="text-red-400">
+                  ⚔️ {effectivePreviewCombo.damage} 伤害
+                </span>
+                {effectivePreviewCombo.effect && effectivePreviewCombo.effectValue !== undefined && (
+                  <span className="text-purple-400">
+                    ✨ {effectivePreviewCombo.effectValue} {
+                      effectivePreviewCombo.effect === 'burn' && '灼烧'
+                      || effectivePreviewCombo.effect === 'freeze' && '冻结'
+                      || effectivePreviewCombo.effect === 'poison' && '中毒'
+                      || effectivePreviewCombo.effect === 'stun' && '眩晕'
+                      || effectivePreviewCombo.effect === 'heal' && '治疗'
+                      || effectivePreviewCombo.effect === 'shield' && '护盾'
+                      || effectivePreviewCombo.effect === 'draw' && '抽牌'
+                      || effectivePreviewCombo.effect === 'lifesteal' && '吸血'
+                      || effectivePreviewCombo.effect === 'thorns' && '反伤'
+                      || effectivePreviewCombo.effect === 'absorb' && '吸收'
+                      || effectivePreviewCombo.effect
+                    }
+                  </span>
+                )}
+                <span className="text-cyan-400">
+                  ⏱️ {previewCombo.cooldown} 冷却
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -299,16 +358,22 @@ export default function BattleScene() {
               ? '选择两张卡牌'
               : selectedCards.length === 1
               ? '再选一张'
-              : previewCombo
-              ? `✨ 释放 ${previewCombo.name}! ✨`
-              : '无效组合'}
+              : !previewCombo
+              ? '无效组合'
+              : isOnCooldown
+              ? `⏱️ 冷却中 (${previewCooldown}回合)`
+              : `✨ 释放 ${previewCombo.name}! ✨`}
           </button>
         </div>
       </div>
 
       {/* 组合技能特效 */}
       {currentCombo && (
-        <ComboEffect combo={currentCombo} show={showComboEffect} />
+        <ComboEffect 
+          combo={currentCombo} 
+          show={showComboEffect} 
+          level={getCurrentComboLevel(currentCombo.id)}
+        />
       )}
     </div>
   );

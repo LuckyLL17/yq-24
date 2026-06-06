@@ -14,12 +14,19 @@ interface CharacterDisplayProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const STATUS_ICONS: Record<StatusEffect['type'], { icon: string; color: string; name: string; glow: string }> = {
+const STATUS_ICONS: Record<string, { icon: string; color: string; name: string; glow: string }> = {
   burn: { icon: '🔥', color: 'text-orange-400', name: '灼烧', glow: 'shadow-orange-500/50' },
   freeze: { icon: '❄️', color: 'text-cyan-300', name: '冻结', glow: 'shadow-cyan-500/50' },
   poison: { icon: '☠️', color: 'text-green-400', name: '中毒', glow: 'shadow-green-500/50' },
   stun: { icon: '💫', color: 'text-yellow-300', name: '眩晕', glow: 'shadow-yellow-500/50' },
   shield: { icon: '🛡️', color: 'text-amber-300', name: '护盾', glow: 'shadow-amber-500/50' },
+  lifesteal: { icon: '🩸', color: 'text-pink-400', name: '吸血', glow: 'shadow-pink-500/50' },
+  thorns: { icon: '🌵', color: 'text-orange-400', name: '反伤', glow: 'shadow-orange-500/50' },
+  absorb: { icon: '💠', color: 'text-cyan-400', name: '吸收', glow: 'shadow-cyan-500/50' },
+  weakness: { icon: '💔', color: 'text-red-400', name: '虚弱', glow: 'shadow-red-500/50' },
+  strength: { icon: '💪', color: 'text-yellow-400', name: '强化', glow: 'shadow-yellow-500/50' },
+  heal: { icon: '💚', color: 'text-green-400', name: '治疗', glow: 'shadow-green-500/50' },
+  draw: { icon: '🃏', color: 'text-blue-400', name: '抽牌', glow: 'shadow-blue-500/50' },
 };
 
 const INTENT_INFO = {

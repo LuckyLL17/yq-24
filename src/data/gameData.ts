@@ -140,6 +140,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 3,
     rarity: 'legendary',
     effectType: 'firestorm',
+    category: 'attack',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 8, effectValueBonus: 3, description: '伤害+8，灼烧+3' },
+      { level: 3, damageBonus: 15, effectValueBonus: 5, effectDurationBonus: 1, description: '伤害+15，灼烧+5，持续+1回合' },
+    ],
   },
   {
     id: 'water_earth',
@@ -152,6 +159,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 1,
     rarity: 'epic',
     effectType: 'vinewrap',
+    category: 'control',
+    cooldown: 2,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 5, effectDurationBonus: 1, description: '伤害+5，眩晕+1回合' },
+      { level: 3, damageBonus: 10, effectDurationBonus: 1, description: '伤害+10，眩晕再+1回合' },
+    ],
   },
   {
     id: 'fire_water',
@@ -164,6 +178,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'steamburst',
+    category: 'heal',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'earth_wind',
@@ -176,6 +193,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 3,
     rarity: 'epic',
     effectType: 'sandstorm',
+    category: 'attack',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'fire_earth',
@@ -188,6 +208,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'legendary',
     effectType: 'lavaeruption',
+    category: 'defense',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 10, effectValueBonus: 5, description: '伤害+10，护盾+5' },
+      { level: 3, damageBonus: 20, effectValueBonus: 10, description: '伤害+20，护盾+10' },
+    ],
   },
   {
     id: 'water_wind',
@@ -200,6 +227,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 1,
     rarity: 'epic',
     effectType: 'icestorm',
+    category: 'control',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'fire_fire',
@@ -212,6 +242,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 2,
     rarity: 'rare',
     effectType: 'firestorm',
+    category: 'attack',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'water_water',
@@ -224,6 +257,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'rare',
     effectType: 'vinewrap',
+    category: 'heal',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'earth_earth',
@@ -236,6 +272,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'rare',
     effectType: 'sandstorm',
+    category: 'defense',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'wind_wind',
@@ -248,6 +287,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'rare',
     effectType: 'icestorm',
+    category: 'utility',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'fire_lightning',
@@ -260,6 +302,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 1,
     rarity: 'legendary',
     effectType: 'thunderstrike',
+    category: 'attack',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 8, effectDurationBonus: 1, description: '伤害+8，眩晕+1回合' },
+      { level: 3, damageBonus: 15, effectDurationBonus: 1, description: '伤害+15，眩晕再+1回合' },
+    ],
   },
   {
     id: 'water_lightning',
@@ -272,6 +321,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 2,
     rarity: 'epic',
     effectType: 'thundercloud',
+    category: 'control',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'earth_lightning',
@@ -284,6 +336,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'earthquake',
+    category: 'defense',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'wind_lightning',
@@ -296,18 +351,28 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'galeforce',
+    category: 'utility',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'fire_light',
     elements: ['fire', 'light'],
     name: '圣焰',
-    description: '神圣与火焰交融，圣焰燃烧邪恶，造成伤害并治愈自身',
+    description: '神圣与火焰交融，圣焰燃烧邪恶，造成伤害并吸取生命治愈自身',
     damage: 24,
-    effect: 'heal',
+    effect: 'lifesteal',
     effectValue: 12,
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'holylight',
+    category: 'lifesteal',
+    cooldown: 2,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 6, effectValueBonus: 4, description: '伤害+6，吸血+4' },
+      { level: 3, damageBonus: 12, effectValueBonus: 8, description: '伤害+12，吸血+8' },
+    ],
   },
   {
     id: 'water_light',
@@ -320,6 +385,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'prismbeam',
+    category: 'defense',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'earth_light',
@@ -332,6 +400,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'divineguard',
+    category: 'defense',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 5, effectValueBonus: 10, description: '伤害+5，护盾+10' },
+      { level: 3, damageBonus: 10, effectValueBonus: 20, description: '伤害+10，护盾+20' },
+    ],
   },
   {
     id: 'wind_light',
@@ -344,42 +419,62 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'rare',
     effectType: 'blessing',
+    category: 'heal',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'fire_dark',
     elements: ['fire', 'dark'],
     name: '暗影烈焰',
-    description: '黑暗与烈焰融合，暗影之火焚烧灵魂，造成持续灼烧',
+    description: '黑暗与烈焰融合，暗影之火焚烧灵魂，吸取敌人生命',
     damage: 28,
-    effect: 'burn',
-    effectValue: 10,
-    effectDuration: 3,
+    effect: 'lifesteal',
+    effectValue: 15,
+    effectDuration: 0,
     rarity: 'legendary',
     effectType: 'shadowflame',
+    category: 'lifesteal',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 8, effectValueBonus: 5, description: '伤害+8，吸血+5' },
+      { level: 3, damageBonus: 15, effectValueBonus: 10, description: '伤害+15，吸血+10' },
+    ],
   },
   {
     id: 'water_dark',
     elements: ['water', 'dark'],
     name: '腐蚀之水',
-    description: '黑暗毒水腐蚀一切，造成持续毒素伤害',
+    description: '黑暗毒水腐蚀一切，造成持续毒素伤害并削弱敌人',
     damage: 22,
     effect: 'poison',
     effectValue: 7,
     effectDuration: 4,
     rarity: 'epic',
     effectType: 'voidstorm',
+    category: 'attack',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'earth_dark',
     elements: ['earth', 'dark'],
     name: '暗影束缚',
-    description: '黑暗从地底涌出，束缚敌人行动',
+    description: '黑暗从地底涌出，束缚敌人行动并反弹伤害',
     damage: 18,
-    effect: 'stun',
-    effectValue: 1,
+    effect: 'thorns',
+    effectValue: 8,
     effectDuration: 2,
     rarity: 'epic',
     effectType: 'shadowbind',
+    category: 'thorns',
+    cooldown: 2,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 5, effectValueBonus: 4, description: '伤害+5，反伤+4' },
+      { level: 3, damageBonus: 10, effectValueBonus: 8, effectDurationBonus: 1, description: '伤害+10，反伤+8，持续+1回合' },
+    ],
   },
   {
     id: 'wind_dark',
@@ -392,6 +487,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'epic',
     effectType: 'darkwhisper',
+    category: 'utility',
+    cooldown: 2,
+    canUpgrade: false,
   },
   {
     id: 'lightning_lightning',
@@ -404,6 +502,9 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 1,
     rarity: 'rare',
     effectType: 'thunderbolt',
+    category: 'attack',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'light_light',
@@ -416,18 +517,28 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'rare',
     effectType: 'solarflare',
+    category: 'heal',
+    cooldown: 1,
+    canUpgrade: false,
   },
   {
     id: 'dark_dark',
     elements: ['dark', 'dark'],
     name: '深渊虚空',
-    description: '双重暗影汇聚，深渊降临吞噬一切，造成巨量毒素伤害',
+    description: '双重暗影汇聚，深渊降临吞噬一切，伤害转化为护盾',
     damage: 22,
-    effect: 'poison',
-    effectValue: 8,
-    effectDuration: 4,
+    effect: 'absorb',
+    effectValue: 15,
+    effectDuration: 0,
     rarity: 'rare',
     effectType: 'abyssalvoid',
+    category: 'absorb',
+    cooldown: 1,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 5, effectValueBonus: 5, description: '伤害+5，吸收+5' },
+      { level: 3, damageBonus: 10, effectValueBonus: 10, description: '伤害+10，吸收+10' },
+    ],
   },
   {
     id: 'lightning_light',
@@ -440,18 +551,32 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 1,
     rarity: 'legendary',
     effectType: 'holylight',
+    category: 'attack',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 10, effectDurationBonus: 1, description: '伤害+10，眩晕+1回合' },
+      { level: 3, damageBonus: 20, effectDurationBonus: 1, description: '伤害+20，眩晕再+1回合' },
+    ],
   },
   {
     id: 'lightning_dark',
     elements: ['lightning', 'dark'],
     name: '混沌雷暴',
-    description: '光明与黑暗的雷电交织，混沌之力撕裂苍穹',
+    description: '光明与黑暗的雷电交织，混沌之力撕裂苍穹，造成持续伤害',
     damage: 35,
     effect: 'poison',
     effectValue: 6,
     effectDuration: 3,
     rarity: 'legendary',
     effectType: 'voidstorm',
+    category: 'attack',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 10, effectValueBonus: 3, description: '伤害+10，毒素+3' },
+      { level: 3, damageBonus: 20, effectValueBonus: 6, effectDurationBonus: 1, description: '伤害+20，毒素+6，持续+1回合' },
+    ],
   },
   {
     id: 'light_dark',
@@ -464,6 +589,13 @@ export const COMBOS: ComboSkill[] = [
     effectDuration: 0,
     rarity: 'legendary',
     effectType: 'prismbeam',
+    category: 'heal',
+    cooldown: 3,
+    canUpgrade: true,
+    upgrades: [
+      { level: 2, damageBonus: 6, effectValueBonus: 8, description: '伤害+6，治疗+8' },
+      { level: 3, damageBonus: 12, effectValueBonus: 15, description: '伤害+12，治疗+15' },
+    ],
   },
 ];
 
@@ -473,6 +605,39 @@ export const findCombo = (e1: ElementType, e2: ElementType): ComboSkill | undefi
       (combo.elements[0] === e1 && combo.elements[1] === e2) ||
       (combo.elements[0] === e2 && combo.elements[1] === e1)
   );
+};
+
+export const getComboLevel = (comboId: string, comboLevels: { comboId: string; level: number }[]): number => {
+  const found = comboLevels.find((c) => c.comboId === comboId);
+  return found ? found.level : 1;
+};
+
+export const getComboWithLevel = (combo: ComboSkill, level: number): ComboSkill => {
+  if (level <= 1 || !combo.upgrades || combo.upgrades.length === 0) {
+    return combo;
+  }
+
+  let totalDamageBonus = 0;
+  let totalEffectValueBonus = 0;
+  let totalEffectDurationBonus = 0;
+
+  for (let i = 0; i < level - 1 && i < combo.upgrades.length; i++) {
+    const upgrade = combo.upgrades[i];
+    totalDamageBonus += upgrade.damageBonus;
+    if (upgrade.effectValueBonus !== undefined) {
+      totalEffectValueBonus += upgrade.effectValueBonus;
+    }
+    if (upgrade.effectDurationBonus !== undefined) {
+      totalEffectDurationBonus += upgrade.effectDurationBonus;
+    }
+  }
+
+  return {
+    ...combo,
+    damage: combo.damage + totalDamageBonus,
+    effectValue: combo.effectValue !== undefined ? combo.effectValue + totalEffectValueBonus : undefined,
+    effectDuration: combo.effectDuration !== undefined ? combo.effectDuration + totalEffectDurationBonus : undefined,
+  };
 };
 
 export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { level: number }> = [
@@ -568,6 +733,28 @@ export const createEnemy = (index: number): Enemy => {
   };
 };
 
+export const CATEGORY_NAMES: Record<string, string> = {
+  attack: '攻击',
+  defense: '防御',
+  heal: '治疗',
+  control: '控制',
+  lifesteal: '吸血',
+  thorns: '反伤',
+  absorb: '吸收',
+  utility: '辅助',
+};
+
+export const CATEGORY_COLORS: Record<string, string> = {
+  attack: 'text-red-400',
+  defense: 'text-blue-400',
+  heal: 'text-green-400',
+  control: 'text-purple-400',
+  lifesteal: 'text-pink-400',
+  thorns: 'text-orange-400',
+  absorb: 'text-cyan-400',
+  utility: 'text-yellow-400',
+};
+
 export const createPlayer = (): Omit<Player, 'hand' | 'deck' | 'selectedCards'> => ({
   name: '元素法师',
   maxHp: 100,
@@ -577,6 +764,8 @@ export const createPlayer = (): Omit<Player, 'hand' | 'deck' | 'selectedCards'> 
   image: '🧙‍♂️',
   mana: 3,
   maxMana: 3,
+  comboCooldowns: [],
+  comboLevels: [],
 });
 
 export const createDeck = (): Card[] => {
