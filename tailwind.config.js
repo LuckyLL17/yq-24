@@ -51,6 +51,10 @@ export default {
         'swirl': 'swirl 4s linear infinite',
         'rise': 'rise 1s ease-out forwards',
         'flash': 'flash 0.3s ease-out',
+        'fade-in': 'fadeIn 0.3s ease-out forwards',
+        'zoom-in': 'zoomIn 0.4s ease-out forwards',
+        'rain': 'rain 3s linear infinite',
+        'spin-slow': 'spinSlow 8s linear infinite',
       },
       boxShadow: {
         'card': '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',

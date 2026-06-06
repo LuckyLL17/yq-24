@@ -30,9 +30,24 @@ export default function GameOverScreen({ type }: GameOverScreenProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* 暗化背景 */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+      {/* 暗化背景 - 立即显示，避免白屏 */}
+      <div className="absolute inset-0 bg-slate-950" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+
+      {/* 魔法阵背景 */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
+          style={{ 
+            animation: 'magicCircle 20s linear infinite',
+            border: `2px solid ${isVictory ? '#ffd700' : '#ff4444'}`,
+          }}
+        >
+          <div className={`absolute inset-8 rounded-full border ${isVictory ? 'border-amber-500/20' : 'border-red-500/20'}`} />
+          <div className={`absolute inset-16 rounded-full border ${isVictory ? 'border-amber-400/10' : 'border-red-400/10'}`} />
+        </div>
+      </div>
 
       {/* 背景粒子效果 */}
       {isVictory && (
@@ -40,12 +55,13 @@ export default function GameOverScreen({ type }: GameOverScreenProps) {
           {[...Array(40)].map((_, i) => (
             <div
               key={i}
-              className="absolute text-3xl animate-fall"
+              className="absolute text-3xl animate-fall opacity-0"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: '-50px',
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`,
+                animationDelay: `${0.2 + Math.random() * 2}s`,
+                animationDuration: `${2.5 + Math.random() * 2}s`,
+                animationFillMode: 'forwards',
               }}
             >
               {['⭐', '✨', '🌟', '💫', '🏆', '💎'][Math.floor(Math.random() * 6)]}
@@ -54,12 +70,31 @@ export default function GameOverScreen({ type }: GameOverScreenProps) {
         </div>
       )}
 
+      {/* 失败时的粒子 */}
+      {!isVictory && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-6 bg-red-500/30 rounded-full animate-rain opacity-0"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-20px',
+                animationDelay: `${0.1 + Math.random() * 1.5}s`,
+                animationDuration: `${2 + Math.random() * 1.5}s`,
+                animationFillMode: 'forwards',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* 主内容 */}
-      <div className="relative z-10 text-center animate-combo-popup">
+      <div className="relative z-10 text-center animate-zoom-in">
         {/* 外发光 */}
         <div
           className={cn(
-            'absolute -inset-16 blur-3xl opacity-60 rounded-full',
+            'absolute -inset-16 blur-3xl opacity-50 rounded-full',
             isVictory
               ? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500'
               : 'bg-gradient-to-br from-red-500 via-rose-600 to-red-700'

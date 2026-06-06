@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
 import HealthBar from './HealthBar';
+import EnemyAvatar from './EnemyAvatar';
+import ElementIcon from './ElementIcon';
 import type { Combatant, StatusEffect } from '@/types/game';
 
 interface CharacterDisplayProps {
@@ -12,19 +14,89 @@ interface CharacterDisplayProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const STATUS_ICONS: Record<StatusEffect['type'], { icon: string; color: string; name: string }> = {
-  burn: { icon: '🔥', color: 'text-orange-500', name: '灼烧' },
-  freeze: { icon: '❄️', color: 'text-cyan-400', name: '冻结' },
-  poison: { icon: '☠️', color: 'text-green-500', name: '中毒' },
-  stun: { icon: '💫', color: 'text-yellow-400', name: '眩晕' },
-  shield: { icon: '🛡️', color: 'text-amber-400', name: '护盾' },
+const STATUS_ICONS: Record<StatusEffect['type'], { icon: string; color: string; name: string; glow: string }> = {
+  burn: { icon: '🔥', color: 'text-orange-400', name: '灼烧', glow: 'shadow-orange-500/50' },
+  freeze: { icon: '❄️', color: 'text-cyan-300', name: '冻结', glow: 'shadow-cyan-500/50' },
+  poison: { icon: '☠️', color: 'text-green-400', name: '中毒', glow: 'shadow-green-500/50' },
+  stun: { icon: '💫', color: 'text-yellow-300', name: '眩晕', glow: 'shadow-yellow-500/50' },
+  shield: { icon: '🛡️', color: 'text-amber-300', name: '护盾', glow: 'shadow-amber-500/50' },
 };
 
 const INTENT_INFO = {
-  attack: { icon: '⚔️', color: 'text-red-400', bg: 'from-red-900/80 to-red-800/80', border: 'border-red-500/50' },
-  defend: { icon: '🛡️', color: 'text-blue-400', bg: 'from-blue-900/80 to-blue-800/80', border: 'border-blue-500/50' },
-  buff: { icon: '✨', color: 'text-purple-400', bg: 'from-purple-900/80 to-purple-800/80', border: 'border-purple-500/50' },
+  attack: { icon: '⚔️', color: 'text-red-300', bg: 'from-red-950/90 to-red-900/90', border: 'border-red-500/60', glow: 'shadow-red-500/30' },
+  defend: { icon: '🛡️', color: 'text-blue-300', bg: 'from-blue-950/90 to-blue-900/90', border: 'border-blue-500/60', glow: 'shadow-blue-500/30' },
+  buff: { icon: '✨', color: 'text-purple-300', bg: 'from-purple-950/90 to-purple-900/90', border: 'border-purple-500/60', glow: 'shadow-purple-500/30' },
 };
+
+function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizes = {
+    sm: 'w-16 h-16',
+    md: 'w-24 h-24',
+    lg: 'w-32 h-32',
+  };
+  
+  const iconSizes = {
+    sm: 'md',
+    md: 'lg',
+    lg: 'xl',
+  } as const;
+  
+  return (
+    <div className={cn('relative flex items-center justify-center', sizes[size])}>
+      {/* 魔法阵背景 */}
+      <div 
+        className="absolute inset-0 rounded-full border-2 border-blue-400/30"
+        style={{ animation: 'magicCircle 10s linear infinite' }}
+      >
+        <div className="absolute inset-2 rounded-full border border-purple-400/20" />
+        <div className="absolute inset-4 rounded-full border border-blue-300/15" />
+      </div>
+      
+      {/* 四元素环绕 */}
+      <div className="absolute inset-0" style={{ animation: 'spin 20s linear infinite' }}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1">
+          <div className="w-4 h-4">
+            <ElementIcon element="fire" size="sm" animate={false} />
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1">
+          <div className="w-4 h-4">
+            <ElementIcon element="water" size="sm" animate={false} />
+          </div>
+        </div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1">
+          <div className="w-4 h-4">
+            <ElementIcon element="earth" size="sm" animate={false} />
+          </div>
+        </div>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1">
+          <div className="w-4 h-4">
+            <ElementIcon element="wind" size="sm" animate={false} />
+          </div>
+        </div>
+      </div>
+      
+      {/* 中央水晶 */}
+      <div 
+        className="relative z-10"
+        style={{ animation: 'float 3s ease-in-out infinite' }}
+      >
+        <div className={cn(
+          'rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500',
+          'shadow-2xl shadow-purple-500/50',
+          size === 'sm' ? 'w-10 h-10' : size === 'md' ? 'w-14 h-14' : 'w-20 h-20',
+        )}>
+          <div className="absolute inset-0.5 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={cn('text-white font-black', size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-2xl')}>
+              ✦
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CharacterDisplay({
   character,
@@ -38,21 +110,21 @@ export default function CharacterDisplay({
   const sizeConfig = {
     sm: {
       avatar: 'w-20 h-20',
-      icon: 'text-4xl',
-      name: 'text-sm',
-      healthbar: 'w-36',
+      name: 'text-xs',
+      healthbar: 'w-32',
+      avatarSize: 'sm' as const,
     },
     md: {
       avatar: 'w-28 h-28',
-      icon: 'text-5xl',
-      name: 'text-base',
-      healthbar: 'w-48',
+      name: 'text-sm',
+      healthbar: 'w-44',
+      avatarSize: 'md' as const,
     },
     lg: {
       avatar: 'w-36 h-36',
-      icon: 'text-7xl',
-      name: 'text-lg',
+      name: 'text-base',
       healthbar: 'w-56',
+      avatarSize: 'lg' as const,
     },
   };
 
@@ -61,22 +133,23 @@ export default function CharacterDisplay({
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center gap-3',
+        'relative flex flex-col items-center gap-2.5',
         isShaking && 'animate-shake'
       )}
     >
       {/* 意图指示器 */}
       {showIntent && intent && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30">
           <div
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
               `bg-gradient-to-r ${INTENT_INFO[intent].bg}`,
               `border ${INTENT_INFO[intent].border}`,
-              'shadow-lg'
+              `shadow-lg ${INTENT_INFO[intent].glow}`,
+              'backdrop-blur-sm'
             )}
           >
-            <span className="text-lg">{INTENT_INFO[intent].icon}</span>
+            <span className="text-base">{INTENT_INFO[intent].icon}</span>
             <span className={cn('font-bold text-sm', INTENT_INFO[intent].color)}>
               {intentValue}
             </span>
@@ -87,7 +160,7 @@ export default function CharacterDisplay({
       {/* 头像外发光 */}
       <div
         className={cn(
-          'absolute inset-0 -m-2 rounded-full blur-xl opacity-50',
+          'absolute -inset-3 rounded-full blur-2xl opacity-40',
           isPlayer
             ? 'bg-gradient-to-br from-blue-500 to-purple-600'
             : 'bg-gradient-to-br from-red-500 to-orange-600',
@@ -96,66 +169,65 @@ export default function CharacterDisplay({
         style={{ animationDuration: '3s' }}
       />
 
-      {/* 头像主体 */}
+      {/* 头像主体容器 */}
       <div
         className={cn(
-          'relative rounded-full flex items-center justify-center',
-          config.avatar,
-          'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900',
-          'border-4',
-          isPlayer ? 'border-blue-500/60' : 'border-red-500/60',
-          'shadow-2xl shadow-black/50'
+          'relative rounded-full flex items-center justify-center overflow-visible',
+          config.avatar
         )}
       >
-        {/* 金属边框高光 */}
+        {/* 金属边框 */}
         <div
           className={cn(
             'absolute inset-0 rounded-full',
-            'border-2 border-white/10',
-            'bg-gradient-to-br from-white/5 to-transparent'
+            'bg-gradient-to-br from-amber-300 via-yellow-600 to-amber-800',
+            'p-[3px]'
           )}
-        />
+        >
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900" />
+        </div>
 
-        {/* 内部光晕 */}
+        {/* 内部高光 */}
         <div
           className={cn(
-            'absolute inset-2 rounded-full',
-            isPlayer
-              ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20'
-              : 'bg-gradient-to-br from-red-500/20 to-orange-500/20'
+            'absolute inset-1.5 rounded-full',
+            'bg-gradient-to-br from-white/5 to-transparent',
+            'pointer-events-none'
           )}
         />
 
-        {/* 角色图标 */}
-        <span
-          className={cn(
-            'relative z-10 drop-shadow-lg',
-            config.icon
+        {/* 角色头像 */}
+        <div className="relative z-10">
+          {isPlayer ? (
+            <PlayerAvatar size={config.avatarSize} />
+          ) : character.avatarType ? (
+            <EnemyAvatar type={character.avatarType} size={config.avatarSize} animate />
+          ) : (
+            <span className={cn('text-5xl drop-shadow-lg')} style={{ animation: 'float 4s ease-in-out infinite' }}>
+              {character.image}
+            </span>
           )}
-          style={{ 
-            animation: 'float 4s ease-in-out infinite',
-            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))',
-          }}
-        >
-          {character.image}
-        </span>
+        </div>
 
         {/* 状态效果图标 */}
         {character.statusEffects.length > 0 && (
-          <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-20">
+          <div className="absolute -bottom-1 -right-0 flex gap-1 z-30">
             {character.statusEffects.slice(0, 3).map((effect, index) => (
               <div
                 key={index}
                 className={cn(
-                  'w-6 h-6 rounded-full flex items-center justify-center text-xs',
-                  'bg-slate-800 border border-slate-600',
-                  'shadow-lg',
-                  'animate-pulse'
+                  'w-7 h-7 rounded-full flex items-center justify-center text-sm',
+                  'bg-gradient-to-br from-slate-700 to-slate-900',
+                  'border-2 border-slate-500/60',
+                  `shadow-lg ${STATUS_ICONS[effect.type].glow}`,
+                  'animate-bounce'
                 )}
                 title={`${STATUS_ICONS[effect.type].name}: ${effect.value} (${effect.duration}回合)`}
-                style={{ animationDelay: `${index * 0.2}s` }}
+                style={{ animationDelay: `${index * 0.15}s`, animationDuration: '1.5s' }}
               >
-                {STATUS_ICONS[effect.type].icon}
+                <span className={cn(STATUS_ICONS[effect.type].color, 'drop-shadow-sm')}>
+                  {STATUS_ICONS[effect.type].icon}
+                </span>
               </div>
             ))}
           </div>
@@ -163,8 +235,17 @@ export default function CharacterDisplay({
 
         {/* 护盾显示 */}
         {character.shield > 0 && (
-          <div className="absolute -top-2 -right-2 z-20">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center text-sm font-black text-amber-900 border-2 border-amber-200 shadow-lg animate-shield-pulse">
+          <div className="absolute -top-1 -right-1 z-30">
+            <div 
+              className={cn(
+                'rounded-full flex items-center justify-center font-black text-amber-900',
+                'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600',
+                'border-2 border-amber-100/80',
+                'shadow-lg shadow-amber-500/50',
+                'animate-shield-pulse',
+                size === 'sm' ? 'w-7 h-7 text-xs' : size === 'md' ? 'w-8 h-8 text-sm' : 'w-9 h-9 text-base'
+              )}
+            >
               {character.shield}
             </div>
           </div>
@@ -175,7 +256,7 @@ export default function CharacterDisplay({
       <div className="text-center">
         <div
           className={cn(
-            'font-bold text-white drop-shadow-lg text-stroke',
+            'font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]',
             config.name
           )}
           style={{ fontFamily: "'Cinzel Decorative', serif" }}

@@ -30,6 +30,16 @@ export interface StatusEffect {
   duration: number;
 }
 
+export type AvatarType = 
+  | 'flame_imp' 
+  | 'water_sprite' 
+  | 'earth_golem' 
+  | 'wind_spirit' 
+  | 'boss_dragon'
+  | 'fire_elemental'
+  | 'water_elemental'
+  | 'earth_elemental';
+
 export interface Combatant {
   name: string;
   maxHp: number;
@@ -37,6 +47,7 @@ export interface Combatant {
   shield: number;
   statusEffects: StatusEffect[];
   image: string;
+  avatarType?: AvatarType;
 }
 
 export interface Player extends Combatant {
