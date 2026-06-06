@@ -4,26 +4,19 @@ import BattleScene from '@/components/BattleScene';
 import GameOverScreen from '@/components/GameOverScreen';
 
 export default function Home() {
-  const { phase, mode } = useGameStore();
+  const { phase } = useGameStore();
 
   return (
     <div className="min-h-screen w-full">
       {phase === 'menu' && <MainMenu />}
-
-      {phase === 'battle' && (
+      
+      {(phase === 'battle' || phase === 'victory' || phase === 'defeat') && (
         <>
-          <BattleScene mode="battle" />
+          <BattleScene />
+          {phase === 'victory' && <GameOverScreen type="victory" />}
+          {phase === 'defeat' && <GameOverScreen type="defeat" />}
         </>
       )}
-
-      {phase === 'challenge' && (
-        <>
-          <BattleScene mode="challenge" />
-        </>
-      )}
-
-      {phase === 'victory' && <GameOverScreen type="victory" />}
-      {phase === 'defeat' && <GameOverScreen type="defeat" />}
     </div>
   );
 }

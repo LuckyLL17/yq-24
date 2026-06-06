@@ -1,24 +1,33 @@
 import { cn } from '@/lib/utils';
 import type { ComboSkill } from '@/types/game';
-import { ELEMENTS } from '@/data/gameData';
+import { ELEMENTS, RARITY_BG } from '@/data/gameData';
 
 interface ComboEffectProps {
   combo: ComboSkill;
   show: boolean;
 }
 
-const RARITY_COLORS = {
-  common: 'from-gray-400 to-gray-600',
-  rare: 'from-blue-400 to-blue-600',
-  epic: 'from-purple-400 to-purple-600',
-  legendary: 'from-amber-400 to-orange-600',
-};
-
 const RARITY_GLOW = {
   common: 'shadow-gray-500/50',
   rare: 'shadow-blue-500/50',
   epic: 'shadow-purple-500/50',
-  legendary: 'shadow-amber-500/50',
+  legendary: 'shadow-amber-500/70',
+};
+
+const EFFECT_BACKGROUNDS: Record<string, string> = {
+  firestorm: 'from-orange-600/30 via-red-600/30 to-rose-700/30',
+  vinewrap: 'from-green-600/30 via-emerald-600/30 to-teal-700/30',
+  steamburst: 'from-cyan-500/30 via-blue-500/30 to-indigo-600/30',
+  sandstorm: 'from-amber-600/30 via-orange-700/30 to-stone-700/30',
+  lavaeruption: 'from-red-600/30 via-orange-600/30 to-amber-700/30',
+  icestorm: 'from-cyan-400/30 via-blue-500/30 to-indigo-600/30',
+};
+
+const RARITY_NAMES: Record<string, string> = {
+  common: '普通',
+  rare: '稀有',
+  epic: '史诗',
+  legendary: '传说',
 };
 
 export default function ComboEffect({ combo, show }: ComboEffectProps) {
@@ -29,86 +38,205 @@ export default function ComboEffect({ combo, show }: ComboEffectProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      {/* 暗化背景 */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn" />
 
+      {/* 全屏光效背景 */}
+      <div
+        className={cn(
+          'absolute inset-0 opacity-40',
+          `bg-gradient-to-br ${EFFECT_BACKGROUNDS[combo.effectType] || 'from-purple-600/30 via-blue-600/30 to-indigo-700/30'}`
+        )}
+        style={{ animation: 'pulse 1s ease-in-out infinite' }}
+      />
+
+      {/* 魔法阵背景 */}
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+        <div
+          className="w-[600px] h-[600px] rounded-full opacity-20 border-4 border-current text-amber-400"
+          style={{ animation: 'magicCircle 8s linear infinite' }}
+        >
+          <div className="absolute inset-8 rounded-full border-2 border-current opacity-60" />
+          <div className="absolute inset-16 rounded-full border border-current opacity-40" />
+          <div className="absolute inset-24 rounded-full border border-current opacity-20" />
+        </div>
+      </div>
+
+      {/* 主内容 */}
       <div className="relative animate-combo-popup">
+        {/* 外发光 */}
         <div
           className={cn(
-            'absolute inset-0 blur-3xl opacity-60 rounded-full',
-            `bg-gradient-to-r ${RARITY_COLORS[combo.rarity]}`
+            'absolute -inset-8 blur-3xl opacity-70 rounded-full',
+            `bg-gradient-to-r ${RARITY_BG[combo.rarity]}`
           )}
-          style={{ animation: 'pulse 1s infinite' }}
+          style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
         />
 
+        {/* 卡牌框架 */}
         <div
           className={cn(
-            'relative px-16 py-10 rounded-3xl',
-            'bg-gradient-to-br from-slate-800/95 to-slate-900/95',
-            'border-2 border-white/20',
+            'relative px-20 py-12 rounded-3xl',
+            'bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-slate-950/95',
+            'border-2 border-amber-500/40',
             'shadow-2xl',
-            RARITY_GLOW[combo.rarity]
+            RARITY_GLOW[combo.rarity],
+            'overflow-hidden'
           )}
         >
-          <div className="absolute -top-3 -left-3 text-5xl animate-spin-slow" style={{ animationDuration: '3s' }}>
+          {/* 背景元素光效 */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className={`absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br ${e1.gradient} opacity-20 blur-2xl`} />
+            <div className={`absolute -bottom-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br ${e2.gradient} opacity-20 blur-2xl`} />
+          </div>
+
+          {/* 装饰角 */}
+          <div className="absolute top-3 left-3 text-3xl animate-spin-slow" style={{ animationDuration: '6s' }}>
             {e1.icon}
           </div>
-          <div className="absolute -top-3 -right-3 text-5xl animate-spin-slow" style={{ animationDuration: '3s', animationDirection: 'reverse' }}>
+          <div className="absolute top-3 right-3 text-3xl animate-spin-slow" style={{ animationDuration: '6s', animationDirection: 'reverse' }}>
             {e2.icon}
           </div>
+          <div className="absolute bottom-3 left-3 text-2xl opacity-50">{e1.icon}</div>
+          <div className="absolute bottom-3 right-3 text-2xl opacity-50">{e2.icon}</div>
 
-          <div className="text-center">
-            <div
-              className={cn(
-                'text-sm font-bold tracking-widest mb-2',
-                `bg-gradient-to-r ${RARITY_COLORS[combo.rarity]} bg-clip-text text-transparent`
-              )}
-            >
-              {combo.rarity.toUpperCase()}
+          <div className="relative z-10 text-center">
+            {/* 稀有度标签 */}
+            <div className="mb-4">
+              <span
+                className={cn(
+                  'inline-block px-6 py-1 rounded-full text-sm font-bold tracking-[0.3em]',
+                  `bg-gradient-to-r ${RARITY_BG[combo.rarity]}`,
+                  'text-white shadow-lg'
+                )}
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
+                {RARITY_NAMES[combo.rarity]}
+              </span>
             </div>
 
-            <h2 className="text-4xl font-black text-white mb-2 drop-shadow-lg">
+            {/* 技能名称 */}
+            <h2
+              className="text-5xl font-black text-white mb-4 text-gradient-gold"
+              style={{ fontFamily: "'Cinzel Decorative', serif" }}
+            >
               {combo.name}
             </h2>
 
-            <div className="flex items-center justify-center gap-4 my-4">
-              <span className="text-4xl">{e1.icon}</span>
-              <span className="text-2xl text-white/50">+</span>
-              <span className="text-4xl">{e2.icon}</span>
-              <span className="text-2xl text-white/50">=</span>
-              <span className="text-3xl">⚡</span>
+            {/* 元素组合展示 */}
+            <div className="flex items-center justify-center gap-4 my-6">
+              <div className="relative">
+                <div
+                  className={cn(
+                    'w-16 h-16 rounded-full flex items-center justify-center text-3xl',
+                    `bg-gradient-to-br ${e1.gradient}`,
+                    'shadow-lg shadow-black/50',
+                    'border-2 border-white/30'
+                  )}
+                  style={{ animation: 'float 2s ease-in-out infinite' }}
+                >
+                  {e1.icon}
+                </div>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${e1.gradient} blur-lg opacity-60 -z-10`} />
+              </div>
+
+              <span className="text-3xl text-amber-400 font-black">+</span>
+
+              <div className="relative">
+                <div
+                  className={cn(
+                    'w-16 h-16 rounded-full flex items-center justify-center text-3xl',
+                    `bg-gradient-to-br ${e2.gradient}`,
+                    'shadow-lg shadow-black/50',
+                    'border-2 border-white/30'
+                  )}
+                  style={{ animation: 'float 2s ease-in-out infinite', animationDelay: '0.3s' }}
+                >
+                  {e2.icon}
+                </div>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${e2.gradient} blur-lg opacity-60 -z-10`} />
+              </div>
+
+              <span className="text-3xl text-amber-400 font-black">=</span>
+
+              <div className="relative">
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-4xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 shadow-lg shadow-amber-500/50 border-2 border-amber-200/50"
+                  style={{ animation: 'pulse 1s ease-in-out infinite' }}
+                >
+                  ⚡
+                </div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 blur-xl opacity-60 -z-10 animate-pulse" />
+              </div>
             </div>
 
-            <p className="text-white/70 text-lg mb-4">{combo.description}</p>
+            {/* 技能描述 */}
+            <p className="text-white/80 text-lg mb-6 max-w-md mx-auto leading-relaxed">
+              {combo.description}
+            </p>
 
-            <div className="flex items-center justify-center gap-6">
+            {/* 属性数值 */}
+            <div className="flex items-center justify-center gap-8">
               <div className="text-center">
-                <div className="text-3xl font-black text-red-400">{combo.damage}</div>
-                <div className="text-xs text-white/50">伤害</div>
-              </div>
-              {combo.effect && (
-                <div className="text-center">
-                  <div className="text-3xl font-black text-purple-400">{combo.effectValue}</div>
-                  <div className="text-xs text-white/50">{combo.effect}</div>
+                <div className="text-4xl font-black text-red-400 drop-shadow-lg">
+                  {combo.damage}
                 </div>
+                <div className="text-sm text-white/50 mt-1">伤害</div>
+              </div>
+
+              {combo.effect && combo.effectValue && (
+                <div className="w-px h-12 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
+              )}
+
+              {combo.effect && combo.effectValue && (
+                <div className="text-center">
+                  <div className="text-4xl font-black text-purple-400 drop-shadow-lg">
+                    {combo.effectValue}
+                  </div>
+                  <div className="text-sm text-white/50 mt-1">
+                    {combo.effect === 'burn' && '灼烧'}
+                    {combo.effect === 'freeze' && '冻结'}
+                    {combo.effect === 'poison' && '中毒'}
+                    {combo.effect === 'stun' && '眩晕'}
+                    {combo.effect === 'heal' && '治疗'}
+                    {combo.effect === 'shield' && '护盾'}
+                    {combo.effect === 'draw' && '抽牌'}
+                  </div>
+                </div>
+              )}
+
+              {combo.effectDuration && combo.effectDuration > 0 && (
+                <>
+                  <div className="w-px h-12 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
+                  <div className="text-center">
+                    <div className="text-4xl font-black text-cyan-400 drop-shadow-lg">
+                      {combo.effectDuration}
+                    </div>
+                    <div className="text-sm text-white/50 mt-1">回合</div>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* 粒子效果 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(30)].map((_, i) => (
           <div
             key={i}
-            className="absolute text-2xl animate-particle"
+            className="absolute text-xl animate-particle"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
+              '--tx': `${(Math.random() - 0.5) * 200}px`,
+              '--ty': `${(Math.random() - 0.5) * 200}px`,
               animationDelay: `${Math.random() * 0.5}s`,
-              animationDuration: `${1 + Math.random()}s`,
-            }}
+              animationDuration: `${1 + Math.random() * 1.5}s`,
+            } as React.CSSProperties}
           >
-            {Math.random() > 0.5 ? e1.icon : e2.icon}
+            {[e1.icon, e2.icon, '✨', '⭐'][Math.floor(Math.random() * 4)]}
           </div>
         ))}
       </div>

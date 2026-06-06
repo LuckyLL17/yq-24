@@ -1,15 +1,56 @@
 import { useGameStore } from '@/store/gameStore';
 import { ELEMENTS, COMBOS } from '@/data/gameData';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick } = useGameStore();
+  const [showCodex, setShowCodex] = useState(false);
+
+  const gameModes = [
+    {
+      id: 'classic',
+      name: '经典对战',
+      description: '与AI对手进行一场完整的卡牌对决',
+      icon: '⚔️',
+      color: 'from-blue-600 via-purple-600 to-blue-600',
+      glow: 'shadow-blue-500/30',
+      onClick: () => startBattle('classic'),
+    },
+    {
+      id: 'challenge',
+      name: '挑战模式',
+      description: '多关卡Boss挑战，击败越来越强的敌人',
+      icon: '🏆',
+      color: 'from-amber-500 via-orange-500 to-red-500',
+      glow: 'shadow-orange-500/30',
+      onClick: () => startChallenge(),
+    },
+    {
+      id: 'endless',
+      name: '无尽模式',
+      description: '无限波次敌人，看看你能坚持多久',
+      icon: '♾️',
+      color: 'from-purple-600 via-pink-600 to-purple-600',
+      glow: 'shadow-purple-500/30',
+      onClick: () => startEndless(),
+    },
+    {
+      id: 'quick',
+      name: '快速对战',
+      description: '简化规则，3分钟一局，适合碎片时间',
+      icon: '⚡',
+      color: 'from-cyan-500 via-teal-500 to-emerald-500',
+      glow: 'shadow-cyan-500/30',
+      onClick: () => startQuick(),
+    },
+  ];
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950" />
-
-      <div className="absolute inset-0">
-        {[...Array(30)].map((_, i) => (
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden battle-ground">
+      {/* 星空背景 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(60)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
@@ -17,85 +58,182 @@ export default function MainMenu() {
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
               opacity: Math.random() * 0.8 + 0.2,
             }}
           />
         ))}
       </div>
 
-      <div className="absolute top-20 left-20 text-6xl animate-float opacity-30">🔥</div>
-      <div className="absolute top-40 right-32 text-5xl animate-float opacity-30" style={{ animationDelay: '1s' }}>💧</div>
-      <div className="absolute bottom-32 left-32 text-7xl animate-float opacity-30" style={{ animationDelay: '0.5s' }}>🌍</div>
-      <div className="absolute bottom-20 right-20 text-6xl animate-float opacity-30" style={{ animationDelay: '1.5s' }}>🌪️</div>
+      {/* 装饰性大元素 */}
+      <div className="absolute top-16 left-16 text-7xl animate-float-slow opacity-20">🔥</div>
+      <div className="absolute top-32 right-24 text-6xl animate-float-slow opacity-20" style={{ animationDelay: '1s' }}>💧</div>
+      <div className="absolute bottom-40 left-24 text-8xl animate-float-slow opacity-20" style={{ animationDelay: '0.5s' }}>🌍</div>
+      <div className="absolute bottom-24 right-16 text-7xl animate-float-slow opacity-20" style={{ animationDelay: '1.5s' }}>🌪️</div>
 
-      <div className="relative z-10 text-center mb-12">
-        <div className="flex justify-center gap-4 mb-4">
-          {Object.values(ELEMENTS).map((el, i) => (
-            <span
-              key={i}
-              className="text-5xl animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            >
-              {el.icon}
-            </span>
-          ))}
+      {/* 魔法阵背景 */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+        <div
+          className="w-[800px] h-[800px] rounded-full opacity-10 border-4 border-current text-amber-400"
+          style={{ animation: 'magicCircle 30s linear infinite' }}
+        >
+          <div className="absolute inset-12 rounded-full border-2 border-current opacity-60" />
+          <div className="absolute inset-24 rounded-full border border-current opacity-40" />
+          <div className="absolute inset-36 rounded-full border border-current opacity-20" />
+          
+          {/* 四元素位置 */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-4xl">🔥</div>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-4xl">🌍</div>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-4xl">💧</div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl">🌪️</div>
         </div>
-
-        <h1
-          className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500 drop-shadow-2xl mb-4"
-          style={{ textShadow: '0 0 40px rgba(251, 191, 36, 0.5)' }}
-        >
-          元素对决
-        </h1>
-        <p className="text-xl text-white/60 tracking-widest">ELEMENTAL DUELS</p>
-        <p className="text-white/40 mt-2">两两搭配，释放组合技</p>
       </div>
 
-      <div className="relative z-10 flex flex-col gap-4 w-72">
-        <button
-          onClick={startBattle}
-          className="group relative px-8 py-4 rounded-xl font-bold text-xl text-white overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-size-200 bg-pos-0 hover:bg-pos-100 transition-all duration-500" />
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-blue-400/30 to-purple-400/30 blur-xl" />
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            ⚔️ 对战模式
-          </span>
-        </button>
-
-        <button
-          onClick={startChallenge}
-          className="group relative px-8 py-4 rounded-xl font-bold text-xl text-white overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-amber-300/30 to-red-300/30 blur-xl" />
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            🔥 连击挑战
-          </span>
-        </button>
-      </div>
-
-      <div className="relative z-10 mt-12 bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 max-w-2xl border border-white/10">
-        <h3 className="text-lg font-bold text-white mb-4 text-center">组合技图鉴</h3>
-        <div className="grid grid-cols-5 gap-3">
-          {COMBOS.map((combo) => (
-            <div
-              key={combo.id}
-              className="flex flex-col items-center p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 transition-colors cursor-default"
-              title={combo.description}
-            >
-              <div className="text-2xl mb-1">
-                {ELEMENTS[combo.elements[0]].icon}+{ELEMENTS[combo.elements[1]].icon}
+      {/* 主内容 */}
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Logo和标题 */}
+        <div className="text-center mb-10">
+          {/* 四元素图标排列 */}
+          <div className="flex justify-center gap-6 mb-6">
+            {Object.values(ELEMENTS).map((el, i) => (
+              <div
+                key={i}
+                className="relative"
+              >
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-amber-500/40 shadow-lg"
+                  style={{ 
+                    animation: 'float 3s ease-in-out infinite',
+                    animationDelay: `${i * 0.2}s`,
+                  }}
+                >
+                  {el.icon}
+                </div>
+                <div 
+                  className={`absolute inset-0 rounded-full bg-gradient-to-br ${el.gradient} blur-lg opacity-40 -z-10`}
+                  style={{ animation: 'pulse 2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }}
+                />
               </div>
-              <div className="text-xs text-white/70 text-center font-medium">{combo.name}</div>
-            </div>
+            ))}
+          </div>
+
+          {/* 游戏标题 */}
+          <h1
+            className="text-7xl font-black text-gradient-gold mb-3"
+            style={{ 
+              fontFamily: "'Cinzel Decorative', serif",
+              textShadow: '0 0 60px rgba(251, 191, 36, 0.4)',
+            }}
+          >
+            元素对决
+          </h1>
+          
+          <p className="text-xl text-white/60 tracking-[0.5em] mb-2">ELEMENTAL DUELS</p>
+          <p className="text-amber-400/70 text-base tracking-wider">两两搭配 · 释放组合技 · 策略对决</p>
+        </div>
+
+        {/* 游戏模式选择 */}
+        <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mb-8">
+          {gameModes.map((mode, index) => (
+            <button
+              key={mode.id}
+              onClick={mode.onClick}
+              className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              {/* 背景渐变 */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-80 group-hover:opacity-100 transition-opacity duration-300`} />
+              
+              {/* 光泽效果 */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60" />
+              
+              {/* 外发光 */}
+              <div className={`absolute -inset-1 rounded-2xl bg-gradient-to-br ${mode.color} blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300`} />
+
+              {/* 边框 */}
+              <div className="absolute inset-0 rounded-2xl border-2 border-white/30" />
+
+              {/* 内容 */}
+              <div className="relative z-10">
+                <div className="text-4xl mb-2">{mode.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                  {mode.name}
+                </h3>
+                <p className="text-white/70 text-sm">{mode.description}</p>
+              </div>
+            </button>
           ))}
+        </div>
+
+        {/* 组合技图鉴按钮 */}
+        <button
+          onClick={() => setShowCodex(!showCodex)}
+          className="px-8 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"
+        >
+          <span>📖</span>
+          <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>组合技图鉴</span>
+        </button>
+
+        {/* 组合技图鉴展开 */}
+        {showCodex && (
+          <div className="mt-6 bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 max-w-3xl w-full border border-amber-500/20 animate-rise">
+            <h3 className="text-xl font-bold text-amber-400 mb-4 text-center" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              ✨ 元素组合技 ✨
+            </h3>
+            <div className="grid grid-cols-5 gap-3">
+              {COMBOS.map((combo) => (
+                <div
+                  key={combo.id}
+                  className="group relative p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-300 border border-white/5 hover:border-amber-500/30 cursor-default"
+                >
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <span className="text-2xl">{ELEMENTS[combo.elements[0]].icon}</span>
+                    <span className="text-amber-400 text-sm">+</span>
+                    <span className="text-2xl">{ELEMENTS[combo.elements[1]].icon}</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                      {combo.name}
+                    </div>
+                    <div className="text-xs text-red-400 font-bold">
+                      伤害 {combo.damage}
+                    </div>
+                    {combo.effect && (
+                      <div className="text-xs text-purple-400 mt-0.5">
+                        {combo.effect === 'burn' && '灼烧'}
+                        {combo.effect === 'freeze' && '冻结'}
+                        {combo.effect === 'poison' && '中毒'}
+                        {combo.effect === 'stun' && '眩晕'}
+                        {combo.effect === 'heal' && '治疗'}
+                        {combo.effect === 'shield' && '护盾'}
+                        {combo.effect === 'draw' && '抽牌'}
+                        {combo.effectValue && ` ${combo.effectValue}`}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 稀有度指示 */}
+                  <div className={cn(
+                    'absolute -top-1 -right-1 w-3 h-3 rounded-full border border-white/30',
+                    combo.rarity === 'common' && 'bg-gray-500',
+                    combo.rarity === 'rare' && 'bg-blue-500',
+                    combo.rarity === 'epic' && 'bg-purple-500',
+                    combo.rarity === 'legendary' && 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse',
+                  )} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 底部提示 */}
+        <div className="mt-8 text-white/30 text-sm">
+          选择两张元素卡牌 → 组合释放强力技能 → 击败对手
         </div>
       </div>
 
-      <div className="relative z-10 mt-8 text-white/30 text-sm">
-        选择两张元素卡牌 → 组合释放强力技能
-      </div>
+      {/* 底部装饰 */}
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
     </div>
   );
 }

@@ -1,11 +1,14 @@
 export type ElementType = 'fire' | 'water' | 'earth' | 'wind';
 
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+
 export interface Card {
   id: string;
   element: ElementType;
   name: string;
   description: string;
   power: number;
+  rarity: Rarity;
 }
 
 export interface ComboSkill {
@@ -17,7 +20,8 @@ export interface ComboSkill {
   effect?: 'burn' | 'freeze' | 'poison' | 'stun' | 'heal' | 'shield' | 'draw';
   effectValue?: number;
   effectDuration?: number;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity: Rarity;
+  effectType: 'firestorm' | 'vinewrap' | 'steamburst' | 'sandstorm' | 'lavaeruption' | 'icestorm';
 }
 
 export interface StatusEffect {
@@ -49,8 +53,16 @@ export interface Enemy extends Combatant {
   intentValue: number;
 }
 
-export type GameMode = 'battle' | 'challenge';
-export type GamePhase = 'menu' | 'battle' | 'victory' | 'defeat' | 'challenge';
+export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick';
+export type GamePhase = 'menu' | 'battle' | 'victory' | 'defeat';
+
+export interface FloatingText {
+  id: string;
+  value: number;
+  type: 'damage' | 'heal' | 'shield';
+  x: number;
+  y: number;
+}
 
 export interface GameState {
   phase: GamePhase;
@@ -64,4 +76,8 @@ export interface GameState {
   isAnimating: boolean;
   currentCombo: ComboSkill | null;
   showComboEffect: boolean;
+  wave: number;
+  floatingTexts: FloatingText[];
+  enemyShaking: boolean;
+  playerShaking: boolean;
 }

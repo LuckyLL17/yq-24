@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ELEMENTS } from '@/data/gameData';
+import { ELEMENTS, RARITY_BG } from '@/data/gameData';
 import type { Card } from '@/types/game';
 
 interface ElementCardProps {
@@ -8,7 +8,23 @@ interface ElementCardProps {
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
+  showDetails?: boolean;
+  animationDelay?: number;
 }
+
+const RARITY_NAMES: Record<string, string> = {
+  common: '普通',
+  rare: '稀有',
+  epic: '史诗',
+  legendary: '传说',
+};
+
+const RARITY_GEM_COLORS: Record<string, string> = {
+  common: 'from-gray-400 to-gray-600',
+  rare: 'from-blue-400 to-blue-600',
+  epic: 'from-purple-400 to-purple-600',
+  legendary: 'from-amber-300 via-yellow-500 to-orange-500',
+};
 
 export default function ElementCard({
   card,
@@ -16,117 +32,232 @@ export default function ElementCard({
   onClick,
   size = 'md',
   disabled = false,
+  showDetails = true,
+  animationDelay = 0,
 }: ElementCardProps) {
   const element = ELEMENTS[card.element];
 
   const sizeClasses = {
-    sm: 'w-20 h-28',
-    md: 'w-28 h-40',
-    lg: 'w-36 h-52',
+    sm: 'w-24 h-36',
+    md: 'w-32 h-48',
+    lg: 'w-44 h-64',
+  };
+
+  const iconSizes = {
+    sm: 'text-3xl',
+    md: 'text-5xl',
+    lg: 'text-7xl',
+  };
+
+  const titleSizes = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  };
+
+  const descSizes = {
+    sm: 'text-[9px]',
+    md: 'text-[10px]',
+    lg: 'text-xs',
+  };
+
+  const powerSizes = {
+    sm: 'w-6 h-6 text-xs',
+    md: 'w-8 h-8 text-sm',
+    lg: 'w-10 h-10 text-base',
+  };
+
+  const gemSizes = {
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5',
   };
 
   return (
     <div
       onClick={disabled ? undefined : onClick}
       className={cn(
-        'relative rounded-xl cursor-pointer transition-all duration-300 transform',
+        'relative cursor-pointer transition-all duration-300 transform',
         sizeClasses[size],
-        isSelected && 'scale-110 -translate-y-4 z-20',
-        !disabled && !isSelected && 'hover:scale-105 hover:-translate-y-2',
+        isSelected && 'scale-110 -translate-y-6 z-30',
+        !disabled && !isSelected && 'hover:scale-105 hover:-translate-y-3 hover:z-20',
         disabled && 'opacity-50 cursor-not-allowed grayscale'
       )}
+      style={{ animationDelay: `${animationDelay}ms` }}
     >
+      {/* 外发光效果 */}
       <div
         className={cn(
-          'absolute inset-0 rounded-xl blur-md opacity-60',
-          `bg-gradient-to-br ${element.gradient}`
+          'absolute -inset-2 rounded-2xl blur-lg opacity-60 transition-opacity duration-300',
+          `bg-gradient-to-br ${element.gradient}`,
+          isSelected ? 'opacity-100' : 'opacity-40'
         )}
-        style={{ animation: 'pulse 2s infinite' }}
+        style={{ animation: 'pulse 2.5s ease-in-out infinite' }}
       />
 
+      {/* 卡牌主体 - 金色边框 */}
       <div
         className={cn(
           'relative h-full w-full rounded-xl overflow-hidden',
-          'border-2 border-white/20',
-          'bg-gradient-to-br from-slate-800/90 to-slate-900/90',
-          'shadow-lg shadow-black/30'
+          'bg-gradient-to-b from-amber-200 via-yellow-600 to-amber-900',
+          'p-[2px]'
         )}
       >
-        <div
-          className={cn(
-            'absolute inset-0 opacity-30',
-            `bg-gradient-to-br ${element.gradient}`
-          )}
-        />
+        {/* 内部深色区域 */}
+        <div className="relative h-full w-full rounded-[10px] overflow-hidden bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950">
+          {/* 元素光晕背景 */}
+          <div
+            className={cn(
+              'absolute inset-0 opacity-30',
+              `bg-gradient-to-br ${element.gradient}`
+            )}
+          />
 
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-0 left-0 w-2/3 h-1/2 bg-gradient-to-br from-white/20 to-transparent" />
-          <div className="absolute bottom-0 right-0 w-1/2 h-1/3 bg-gradient-to-tl from-black/20 to-transparent" />
-        </div>
+          {/* 装饰性花纹 - 顶部 */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-6 bg-gradient-to-b from-amber-500/20 to-transparent rounded-b-full" />
 
-        <div className="relative z-10 h-full flex flex-col items-center justify-between p-2">
-          <div className="w-full flex justify-between items-start">
+          {/* 力量值宝石 */}
+          <div
+            className={cn(
+              'absolute top-1.5 left-1.5 z-20',
+              powerSizes[size],
+              'rounded-full',
+              'bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700',
+              'border-2 border-amber-200/60',
+              'flex items-center justify-center font-black text-amber-900',
+              'shadow-lg shadow-amber-500/50'
+            )}
+          >
+            {card.power}
+          </div>
+
+          {/* 稀有度宝石 */}
+          <div className="absolute top-1.5 right-1.5 z-20">
             <div
               className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold',
-                'bg-gradient-to-br from-amber-300 to-amber-600 text-amber-900',
-                'border border-amber-200/50 shadow-md',
-                size === 'sm' && 'w-5 h-5 text-[10px]'
+                gemSizes[size],
+                'rounded-full',
+                `bg-gradient-to-br ${RARITY_GEM_COLORS[card.rarity]}`,
+                'border border-white/40',
+                'shadow-md'
               )}
+              style={{ animation: 'pulse 2s ease-in-out infinite' }}
+            />
+          </div>
+
+          {/* 中央元素图标区域 */}
+          <div className="absolute inset-0 flex items-center justify-center pt-6 pb-16">
+            {/* 魔法阵背景 */}
+            <div
+              className={cn(
+                'absolute w-3/4 aspect-square rounded-full opacity-20',
+                `border-2 border-current text-${card.element === 'fire' ? 'orange' : card.element === 'water' ? 'cyan' : card.element === 'earth' ? 'amber' : 'emerald'}-400`
+              )}
+              style={{ animation: 'magicCircle 12s linear infinite' }}
             >
-              {card.power}
+              <div className="absolute inset-2 rounded-full border border-current opacity-50" />
+              <div className="absolute inset-4 rounded-full border border-current opacity-30" />
             </div>
+
+            {/* 元素图标 */}
             <div
               className={cn(
-                'text-lg drop-shadow-lg',
-                size === 'sm' && 'text-base'
+                iconSizes[size],
+                'relative z-10 filter drop-shadow-2xl',
+                'transition-transform duration-300'
               )}
+              style={{
+                animation: 'float 3s ease-in-out infinite',
+                filter: `drop-shadow(0 0 15px ${element.color})`,
+              }}
             >
               {element.icon}
             </div>
-          </div>
 
-          <div
-            className={cn(
-              'text-4xl filter drop-shadow-lg',
-              size === 'sm' && 'text-2xl',
-              size === 'lg' && 'text-6xl'
-            )}
-            style={{
-              textShadow: '0 0 20px rgba(255,255,255,0.3)',
-              animation: 'float 3s ease-in-out infinite',
-            }}
-          >
-            {element.icon}
-          </div>
-
-          <div className="text-center">
-            <div
-              className={cn(
-                'font-bold text-white drop-shadow-lg tracking-wide',
-                size === 'sm' && 'text-xs',
-                size === 'md' && 'text-sm',
-                size === 'lg' && 'text-lg'
-              )}
-            >
-              {card.name}元素
-            </div>
-            <div
-              className={cn(
-                'text-white/60 mt-0.5',
-                size === 'sm' && 'text-[10px]',
-                size === 'md' && 'text-xs',
-                size === 'lg' && 'text-sm'
-              )}
-            >
-              {card.description}
+            {/* 粒子效果 */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'absolute w-1 h-1 rounded-full',
+                    `bg-${card.element === 'fire' ? 'orange' : card.element === 'water' ? 'cyan' : card.element === 'earth' ? 'amber' : 'emerald'}-300`
+                  )}
+                  style={{
+                    left: `${30 + i * 20}%`,
+                    top: '50%',
+                    opacity: 0.6,
+                    animation: `float ${2 + i * 0.5}s ease-in-out infinite`,
+                    animationDelay: `${i * 0.3}s`,
+                  }}
+                />
+              ))}
             </div>
           </div>
+
+          {/* 卡牌名称横幅 */}
+          <div className="absolute bottom-10 left-0 right-0 z-10">
+            <div className="relative">
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-amber-900/80 via-amber-800/90 to-amber-900/80" />
+              <div className="absolute inset-x-1 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+              <div
+                className={cn(
+                  'relative text-center font-bold text-white text-stroke py-0.5',
+                  titleSizes[size]
+                )}
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
+                {card.name}
+              </div>
+            </div>
+          </div>
+
+          {/* 描述区域 */}
+          {showDetails && (
+            <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
+              <div className="bg-slate-900/80 rounded-md px-1.5 py-1 border border-amber-700/30">
+                <p
+                  className={cn(
+                    'text-center text-white/80 leading-tight',
+                    descSizes[size]
+                  )}
+                >
+                  {card.description}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 高光效果 */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div
+              className="absolute top-0 left-0 w-1/2 h-1/2 bg-gradient-to-br from-white/15 via-white/5 to-transparent"
+              style={{ borderRadius: '10px 0 0 0' }}
+            />
+            <div
+              className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-gradient-to-tl from-black/20 to-transparent"
+              style={{ borderRadius: '0 0 10px 0' }}
+            />
+          </div>
+
+          {/* 选中时的金色光环 */}
+          {isSelected && (
+            <div className="absolute inset-0 rounded-[10px] ring-4 ring-yellow-400 ring-opacity-90 animate-pulse" />
+          )}
         </div>
+      </div>
 
-        {isSelected && (
-          <div className="absolute inset-0 rounded-xl ring-4 ring-yellow-400 ring-opacity-80 animate-pulse" />
-        )}
+      {/* 稀有度底部标签 */}
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
+        <div
+          className={cn(
+            'px-2 py-0.5 rounded-full text-[8px] font-bold text-white',
+            `bg-gradient-to-r ${RARITY_BG[card.rarity]}`,
+            'border border-white/30 shadow-md'
+          )}
+        >
+          {RARITY_NAMES[card.rarity]}
+        </div>
       </div>
     </div>
   );
