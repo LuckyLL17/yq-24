@@ -21,6 +21,21 @@ const EFFECT_BACKGROUNDS: Record<string, string> = {
   sandstorm: 'from-amber-600/30 via-orange-700/30 to-stone-700/30',
   lavaeruption: 'from-red-600/30 via-orange-600/30 to-amber-700/30',
   icestorm: 'from-cyan-400/30 via-blue-500/30 to-indigo-600/30',
+  thunderstrike: 'from-violet-600/30 via-purple-600/30 to-fuchsia-700/30',
+  holylight: 'from-yellow-400/30 via-amber-500/30 to-orange-600/30',
+  shadowflame: 'from-purple-700/30 via-indigo-800/30 to-slate-900/30',
+  thundercloud: 'from-slate-600/30 via-violet-600/30 to-purple-700/30',
+  prismbeam: 'from-yellow-400/30 via-cyan-500/30 to-pink-500/30',
+  voidstorm: 'from-indigo-800/30 via-purple-900/30 to-slate-900/30',
+  earthquake: 'from-amber-700/30 via-orange-800/30 to-stone-800/30',
+  divineguard: 'from-yellow-300/30 via-amber-400/30 to-yellow-500/30',
+  shadowbind: 'from-slate-800/30 via-purple-900/30 to-indigo-900/30',
+  galeforce: 'from-emerald-400/30 via-cyan-500/30 to-violet-500/30',
+  blessing: 'from-yellow-300/30 via-green-400/30 to-cyan-400/30',
+  darkwhisper: 'from-purple-800/30 via-slate-800/30 to-indigo-900/30',
+  thunderbolt: 'from-violet-500/30 via-purple-600/30 to-fuchsia-700/30',
+  solarflare: 'from-yellow-400/30 via-orange-500/30 to-red-600/30',
+  abyssalvoid: 'from-slate-900/30 via-purple-900/30 to-indigo-900/30',
 };
 
 const RARITY_NAMES: Record<string, string> = {

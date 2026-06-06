@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type ElementType = 'fire' | 'water' | 'earth' | 'wind';
+type ElementType = 'fire' | 'water' | 'earth' | 'wind' | 'lightning' | 'light' | 'dark';
 
 interface ElementIconProps {
   element: ElementType;
@@ -188,11 +188,142 @@ export function WindIcon({ size = 'md', animate = true, className }: ElementIcon
   );
 }
 
+export function LightningIcon({ size = 'md', animate = true, className }: ElementIconProps) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={cn(sizes[size], className, animate && 'animate-lightning-flash')}
+      style={{ filter: 'drop-shadow(0 0 8px rgba(157, 78, 221, 0.8))' }}
+    >
+      <defs>
+        <linearGradient id="lightningGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e0aaff" />
+          <stop offset="30%" stopColor="#9d4edd" />
+          <stop offset="70%" stopColor="#7b2cbf" />
+          <stop offset="100%" stopColor="#5a189a" />
+        </linearGradient>
+        <filter id="lightningGlow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <path
+        d="M55 10 L35 50 L50 50 L40 90 L70 45 L55 45 L65 10 Z"
+        fill="url(#lightningGrad)"
+        filter="url(#lightningGlow)"
+      />
+      <path
+        d="M55 20 L42 48 L52 48 L45 75 L62 50 L52 50 L60 20 Z"
+        fill="#fff"
+        opacity="0.6"
+      />
+      <circle cx="30" cy="30" r="2" fill="#e0aaff" opacity="0.8" />
+      <circle cx="75" cy="60" r="2.5" fill="#e0aaff" opacity="0.7" />
+      <circle cx="25" cy="70" r="1.5" fill="#e0aaff" opacity="0.6" />
+    </svg>
+  );
+}
+
+export function LightIcon({ size = 'md', animate = true, className }: ElementIconProps) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={cn(sizes[size], className, animate && 'animate-pulse')}
+      style={{ filter: 'drop-shadow(0 0 10px rgba(255, 217, 61, 0.9))' }}
+    >
+      <defs>
+        <radialGradient id="lightGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fffacd" />
+          <stop offset="30%" stopColor="#ffd93d" />
+          <stop offset="70%" stopColor="#ffb703" />
+          <stop offset="100%" stopColor="#fb8500" />
+        </radialGradient>
+        <filter id="lightGlow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#lightGlow)">
+        {[...Array(8)].map((_, i) => (
+          <polygon
+            key={i}
+            points="50,15 54,40 50,35 46,40"
+            fill="url(#lightGrad)"
+            transform={`rotate(${i * 45} 50 50)`}
+            opacity="0.8"
+          />
+        ))}
+      </g>
+      <circle cx="50" cy="50" r="22" fill="url(#lightGrad)" />
+      <circle cx="50" cy="50" r="15" fill="#fffacd" opacity="0.9" />
+      <circle cx="45" cy="45" r="5" fill="#fff" opacity="0.8" />
+    </svg>
+  );
+}
+
+export function DarkIcon({ size = 'md', animate = true, className }: ElementIconProps) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={cn(sizes[size], className, animate && 'animate-spin-slow')}
+      style={{ filter: 'drop-shadow(0 0 8px rgba(123, 44, 191, 0.8))' }}
+    >
+      <defs>
+        <radialGradient id="darkGrad" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#7b2cbf" />
+          <stop offset="40%" stopColor="#5a189a" />
+          <stop offset="70%" stopColor="#3c096c" />
+          <stop offset="100%" stopColor="#10002b" />
+        </radialGradient>
+        <filter id="darkGlow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#darkGlow)">
+        <circle cx="50" cy="50" r="38" fill="url(#darkGrad)" />
+        <circle cx="62" cy="38" r="28" fill="#10002b" />
+        <circle cx="65" cy="55" r="25" fill="url(#darkGrad)" opacity="0.5" />
+      </g>
+      <circle cx="35" cy="35" r="2" fill="#e0aaff" opacity="0.8" />
+      <circle cx="28" cy="55" r="1.5" fill="#c77dff" opacity="0.7" />
+      <circle cx="42" cy="68" r="1.8" fill="#e0aaff" opacity="0.6" />
+      <circle cx="55" cy="30" r="1.2" fill="#c77dff" opacity="0.5" />
+      <path
+        d="M25 45 Q30 50, 25 55"
+        stroke="#9d4edd"
+        strokeWidth="1.5"
+        fill="none"
+        opacity="0.6"
+      />
+      <path
+        d="M70 40 Q75 45, 70 50"
+        stroke="#9d4edd"
+        strokeWidth="1.5"
+        fill="none"
+        opacity="0.5"
+      />
+    </svg>
+  );
+}
+
 const elementComponents = {
   fire: FireIcon,
   water: WaterIcon,
   earth: EarthIcon,
   wind: WindIcon,
+  lightning: LightningIcon,
+  light: LightIcon,
+  dark: DarkIcon,
 };
 
 export default function ElementIcon({ element, size = 'md', animate = true, className }: ElementIconProps) {

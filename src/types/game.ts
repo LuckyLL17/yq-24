@@ -1,4 +1,4 @@
-export type ElementType = 'fire' | 'water' | 'earth' | 'wind';
+export type ElementType = 'fire' | 'water' | 'earth' | 'wind' | 'lightning' | 'light' | 'dark';
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -21,7 +21,7 @@ export interface ComboSkill {
   effectValue?: number;
   effectDuration?: number;
   rarity: Rarity;
-  effectType: 'firestorm' | 'vinewrap' | 'steamburst' | 'sandstorm' | 'lavaeruption' | 'icestorm';
+  effectType: 'firestorm' | 'vinewrap' | 'steamburst' | 'sandstorm' | 'lavaeruption' | 'icestorm' | 'thunderstrike' | 'holylight' | 'shadowflame' | 'thundercloud' | 'prismbeam' | 'voidstorm' | 'earthquake' | 'divineguard' | 'shadowbind' | 'galeforce' | 'blessing' | 'darkwhisper' | 'thunderbolt' | 'solarflare' | 'abyssalvoid';
 }
 
 export interface StatusEffect {
@@ -38,7 +38,10 @@ export type AvatarType =
   | 'boss_dragon'
   | 'fire_elemental'
   | 'water_elemental'
-  | 'earth_elemental';
+  | 'earth_elemental'
+  | 'lightning_elemental'
+  | 'light_elemental'
+  | 'dark_elemental';
 
 export interface Combatant {
   name: string;

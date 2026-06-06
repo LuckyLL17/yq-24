@@ -27,6 +27,9 @@ export default {
           'water': '#4ecdc4',
           'earth': '#8b5a2b',
           'wind': '#98d8aa',
+          'lightning': '#9d4edd',
+          'light': '#ffd93d',
+          'dark': '#7b2cbf',
         }
       },
       animation: {
@@ -55,6 +58,7 @@ export default {
         'zoom-in': 'zoomIn 0.4s ease-out forwards',
         'rain': 'rain 3s linear infinite',
         'spin-slow': 'spinSlow 8s linear infinite',
+        'lightning-flash': 'lightningFlash 1.5s ease-in-out infinite',
       },
       boxShadow: {
         'card': '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
@@ -64,6 +68,9 @@ export default {
         'glow-water': '0 0 30px rgba(78,205,196,0.6), 0 0 60px rgba(78,205,196,0.3)',
         'glow-earth': '0 0 30px rgba(139,90,43,0.6), 0 0 60px rgba(139,90,43,0.3)',
         'glow-wind': '0 0 30px rgba(152,216,170,0.6), 0 0 60px rgba(152,216,170,0.3)',
+        'glow-lightning': '0 0 30px rgba(157,78,221,0.6), 0 0 60px rgba(157,78,221,0.3)',
+        'glow-light': '0 0 30px rgba(255,217,61,0.6), 0 0 60px rgba(255,217,61,0.3)',
+        'glow-dark': '0 0 30px rgba(123,44,191,0.6), 0 0 60px rgba(123,44,191,0.3)',
       },
       backgroundImage: {
         'card-frame': 'linear-gradient(145deg, #6b4f3a, #4a3728, #2d1f16)',
