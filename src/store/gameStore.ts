@@ -305,8 +305,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         get().addScore(effectiveCombo.damage * 10);
       }
 
+      const comboEssence = combo.rarity === 'legendary' ? 5 : combo.rarity === 'epic' ? 3 : 2;
+      get().addEssence(comboEssence);
+
       if (isEnemyDead) {
-        const essenceReward = Math.floor(combo.rarity === 'legendary' ? 15 : combo.rarity === 'epic' ? 10 : 5) + get().wave * 2;
+        const killBonus = combo.rarity === 'legendary' ? 15 : combo.rarity === 'epic' ? 10 : 5;
+        const waveBonus = get().wave * 2;
+        const essenceReward = killBonus + waveBonus;
         get().addEssence(essenceReward);
         
         if (mode === 'classic' || mode === 'quick') {
@@ -390,6 +395,9 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         return;
       }
       if (state.enemy && state.enemy.hp <= 0) {
+        const thornsKillEssence = 8 + get().wave * 2;
+        get().addEssence(thornsKillEssence);
+        
         if (mode === 'classic' || mode === 'quick') {
           set({ phase: 'victory' });
         } else {
@@ -491,9 +499,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   applyStatusEffects: () => {
+    let totalDamage = 0;
+    let enemyDied = false;
+
     set((state) => {
       if (!state.enemy) return state;
-      let totalDamage = 0;
+
       const newEffects = state.enemy.statusEffects
         .map((effect) => {
           if (effect.type === 'burn' || effect.type === 'poison') {
@@ -512,6 +523,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         get().addFloatingText('damage', totalDamage, 'enemy');
       }
 
+      if (newEnemyHp <= 0 && state.enemy.hp > 0) {
+        enemyDied = true;
+      }
+
       return {
         enemy: {
           ...state.enemy,
@@ -520,6 +535,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         },
       };
     });
+
+    if (enemyDied) {
+      const dotKillEssence = 6 + get().wave * 2;
+      get().addEssence(dotKillEssence);
+    }
   },
 
   setAnimating: (value: boolean) => {

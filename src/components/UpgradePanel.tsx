@@ -303,12 +303,19 @@ export default function UpgradePanel() {
           </div>
 
           <div className="mt-6 p-4 rounded-xl bg-slate-800/30 border border-white/5">
+            <h4 className="text-sm font-bold text-white/60 mb-2">💎 元素精华获取方式</h4>
+            <ul className="text-xs text-white/40 space-y-1 mb-3">
+              <li>• 释放组合技能：传说+5 / 史诗+3 / 稀有+2</li>
+              <li>• 直接击杀敌人：传说+15 / 史诗+10 / 稀有+5 (+波次×2)</li>
+              <li>• 持续伤害击杀（灼烧/中毒）：+6 (+波次×2)</li>
+              <li>• 反伤击杀：+8 (+波次×2)</li>
+            </ul>
             <h4 className="text-sm font-bold text-white/60 mb-2">💡 小提示</h4>
             <ul className="text-xs text-white/40 space-y-1">
-              <li>• 击败敌人可获得元素精华，连击越高获得越多</li>
               <li>• 传说品质技能升级效果最强，但消耗也最高</li>
               <li>• 合理搭配攻击、防御和控制技能可以应对不同敌人</li>
               <li>• 吸血和吸收类技能可以在持久战中发挥巨大作用</li>
+              <li>• 反伤配合高护盾可以有效对付高攻击敌人</li>
             </ul>
           </div>
         </div>
