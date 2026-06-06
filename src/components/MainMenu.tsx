@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { ELEMENTS, COMBOS } from '@/data/gameData';
+import { ELEMENTS, COMBOS, CATEGORY_NAMES, CATEGORY_COLORS } from '@/data/gameData';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -176,11 +176,81 @@ export default function MainMenu() {
 
         {/* 组合技图鉴展开 */}
         {showCodex && (
-          <div className="mt-6 bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 max-w-3xl w-full border border-amber-500/20 animate-rise">
+          <div className="mt-6 bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 max-w-4xl w-full border border-amber-500/20 animate-rise max-h-[70vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-amber-400 mb-4 text-center" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
               ✨ 元素组合技 ✨
             </h3>
-            <div className="grid grid-cols-5 gap-3">
+
+            <div className="mb-5 p-4 rounded-xl bg-slate-800/50 border border-white/10">
+              <h4 className="text-sm font-bold text-amber-300 mb-3">📖 效果类型说明</h4>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-orange-400 font-bold">🔥 灼烧</span>
+                  <p className="text-white/50 mt-1">每回合持续伤害</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-cyan-300 font-bold">❄️ 冻结</span>
+                  <p className="text-white/50 mt-1">跳过敌人行动</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-green-400 font-bold">☠️ 中毒</span>
+                  <p className="text-white/50 mt-1">持续毒素伤害</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-yellow-300 font-bold">💫 眩晕</span>
+                  <p className="text-white/50 mt-1">无法行动</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-green-400 font-bold">💚 治疗</span>
+                  <p className="text-white/50 mt-1">恢复生命值</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-amber-300 font-bold">🛡️ 护盾</span>
+                  <p className="text-white/50 mt-1">抵挡伤害</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-blue-400 font-bold">🃏 抽牌</span>
+                  <p className="text-white/50 mt-1">抽取更多卡牌</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-pink-400 font-bold">🩸 吸血</span>
+                  <p className="text-white/50 mt-1">伤害转生命</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-orange-400 font-bold">🌵 反伤</span>
+                  <p className="text-white/50 mt-1">反弹敌人攻击</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-cyan-400 font-bold">💠 吸收</span>
+                  <p className="text-white/50 mt-1">伤害转护盾</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-red-400 font-bold">💔 虚弱</span>
+                  <p className="text-white/50 mt-1">降低敌人攻击</p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-700/40">
+                  <span className="text-yellow-400 font-bold">💪 强化</span>
+                  <p className="text-white/50 mt-1">提升自身攻击</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-white/60">技能类型：</span>
+              {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
+                <span
+                  key={key}
+                  className={cn(
+                    'px-2 py-0.5 rounded text-xs font-semibold bg-slate-700/60',
+                    CATEGORY_COLORS[key]
+                  )}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
               {COMBOS.map((combo) => (
                 <div
                   key={combo.id}
@@ -195,19 +265,38 @@ export default function MainMenu() {
                     <div className="text-sm font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
                       {combo.name}
                     </div>
+                    <div className={cn(
+                      'text-xs font-semibold mb-1',
+                      CATEGORY_COLORS[combo.category]
+                    )}>
+                      {CATEGORY_NAMES[combo.category]}
+                    </div>
                     <div className="text-xs text-red-400 font-bold">
-                      伤害 {combo.damage}
+                      ⚔️ {combo.damage} 伤害
                     </div>
                     {combo.effect && (
                       <div className="text-xs text-purple-400 mt-0.5">
-                        {combo.effect === 'burn' && '灼烧'}
+                        ✨ {combo.effect === 'burn' && '灼烧'}
                         {combo.effect === 'freeze' && '冻结'}
                         {combo.effect === 'poison' && '中毒'}
                         {combo.effect === 'stun' && '眩晕'}
                         {combo.effect === 'heal' && '治疗'}
                         {combo.effect === 'shield' && '护盾'}
                         {combo.effect === 'draw' && '抽牌'}
-                        {combo.effectValue && ` ${combo.effectValue}`}
+                        {combo.effect === 'lifesteal' && '吸血'}
+                        {combo.effect === 'thorns' && '反伤'}
+                        {combo.effect === 'absorb' && '吸收'}
+                        {combo.effect === 'weakness' && '虚弱'}
+                        {combo.effect === 'strength' && '强化'}
+                        {combo.effectValue !== undefined && ` ${combo.effectValue}`}
+                      </div>
+                    )}
+                    <div className="text-xs text-amber-400/80 mt-0.5">
+                      ⏱️ 冷却 {combo.cooldown} 回合
+                    </div>
+                    {combo.canUpgrade && (
+                      <div className="text-xs text-green-400 mt-0.5">
+                        ⬆️ 可升级
                       </div>
                     )}
                   </div>
@@ -219,7 +308,7 @@ export default function MainMenu() {
                     combo.rarity === 'rare' && 'bg-blue-500',
                     combo.rarity === 'epic' && 'bg-purple-500',
                     combo.rarity === 'legendary' && 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse',
-                  )} />
+                  )} title={combo.rarity} />
                 </div>
               ))}
             </div>

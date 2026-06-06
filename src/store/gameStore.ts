@@ -33,6 +33,9 @@ interface GameActions {
   upgradeCombo: (comboId: string) => boolean;
   getCurrentComboLevel: (comboId: string) => number;
   applyPlayerStatusEffects: () => void;
+  toggleUpgradePanel: () => void;
+  getUpgradeCost: (comboId: string) => number;
+  addEssence: (amount: number) => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -55,9 +58,11 @@ const initialState: GameState = {
   comboHistory: [],
   streak: 0,
   score: 0,
+  elementEssence: 0,
   isAnimating: false,
   currentCombo: null,
   showComboEffect: false,
+  showUpgradePanel: false,
   wave: 1,
   floatingTexts: [],
   enemyShaking: false,
@@ -87,9 +92,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       comboHistory: [],
       streak: 0,
       score: 0,
+      elementEssence: 0,
       isAnimating: false,
       currentCombo: null,
       showComboEffect: false,
+      showUpgradePanel: false,
       wave: 1,
       floatingTexts: [],
     });
@@ -299,6 +306,9 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }
 
       if (isEnemyDead) {
+        const essenceReward = Math.floor(combo.rarity === 'legendary' ? 15 : combo.rarity === 'epic' ? 10 : 5) + get().wave * 2;
+        get().addEssence(essenceReward);
+        
         if (mode === 'classic' || mode === 'quick') {
           setTimeout(() => set({ phase: 'victory' }), 800);
         } else {
@@ -598,13 +608,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   upgradeCombo: (comboId: string) => {
-    const { player } = get();
+    const { elementEssence, player } = get();
     const combo = COMBOS.find((c) => c.id === comboId);
     if (!combo || !combo.canUpgrade || !combo.upgrades) return false;
 
     const currentLevel = get().getCurrentComboLevel(comboId);
     const maxLevel = combo.upgrades.length + 1;
     if (currentLevel >= maxLevel) return false;
+
+    const cost = get().getUpgradeCost(comboId);
+    if (elementEssence < cost) return false;
 
     set((state) => {
       const newLevels = [...state.player.comboLevels];
@@ -618,6 +631,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         newLevels.push({ comboId, level: 2 });
       }
       return {
+        elementEssence: state.elementEssence - cost,
         player: {
           ...state.player,
           comboLevels: newLevels,
@@ -648,5 +662,22 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         },
       };
     });
+  },
+
+  toggleUpgradePanel: () => {
+    set((state) => ({ showUpgradePanel: !state.showUpgradePanel }));
+  },
+
+  getUpgradeCost: (comboId: string) => {
+    const combo = COMBOS.find((c) => c.id === comboId);
+    if (!combo || !combo.canUpgrade || !combo.upgrades) return 0;
+
+    const currentLevel = get().getCurrentComboLevel(comboId);
+    const baseCost = combo.rarity === 'legendary' ? 30 : combo.rarity === 'epic' ? 20 : 10;
+    return baseCost * currentLevel;
+  },
+
+  addEssence: (amount: number) => {
+    set((state) => ({ elementEssence: state.elementEssence + amount }));
   },
 }));

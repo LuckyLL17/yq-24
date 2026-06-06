@@ -135,9 +135,11 @@ export interface GameState {
   comboHistory: ComboSkill[];
   streak: number;
   score: number;
+  elementEssence: number;
   isAnimating: boolean;
   currentCombo: ComboSkill | null;
   showComboEffect: boolean;
+  showUpgradePanel: boolean;
   wave: number;
   floatingTexts: FloatingText[];
   enemyShaking: boolean;

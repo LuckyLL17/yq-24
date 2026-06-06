@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
+import UpgradePanel from './UpgradePanel';
 import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboLevel, getComboWithLevel } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ export default function BattleScene() {
     currentCombo,
     streak,
     score,
+    elementEssence,
     goToMenu,
     floatingTexts,
     enemyShaking,
@@ -27,6 +29,7 @@ export default function BattleScene() {
     isComboOnCooldown,
     getComboCooldown,
     getCurrentComboLevel,
+    toggleUpgradePanel,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -147,8 +150,23 @@ export default function BattleScene() {
           )}
         </div>
 
-        <div className="text-white/60 text-sm">
-          <span className="text-amber-400">🃏</span> 牌库: {player.deck.length}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-900/40 border border-purple-500/30">
+            <span className="text-lg">💎</span>
+            <span className="font-bold text-purple-300">{elementEssence}</span>
+          </div>
+
+          <button
+            onClick={toggleUpgradePanel}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 hover:text-amber-200 transition-all duration-300 border border-amber-500/30 hover:border-amber-400/50 flex items-center gap-2 font-semibold"
+          >
+            <span>⚡</span>
+            <span>技能升级</span>
+          </button>
+
+          <div className="text-white/60 text-sm">
+            <span className="text-amber-400">🃏</span> 牌库: {player.deck.length}
+          </div>
         </div>
       </div>
 
@@ -375,6 +393,9 @@ export default function BattleScene() {
           level={getCurrentComboLevel(currentCombo.id)}
         />
       )}
+
+      {/* 升级面板 */}
+      <UpgradePanel />
     </div>
   );
 }
