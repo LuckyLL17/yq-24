@@ -82,12 +82,56 @@ export type AvatarType =
   | 'earth_golem' 
   | 'wind_spirit' 
   | 'boss_dragon'
+  | 'boss_dragon_phase2'
+  | 'boss_dragon_phase3'
   | 'fire_elemental'
   | 'water_elemental'
   | 'earth_elemental'
   | 'lightning_elemental'
   | 'light_elemental'
-  | 'dark_elemental';
+  | 'dark_elemental'
+  | 'shadow_assassin'
+  | 'crystal_guardian'
+  | 'thunder_lord'
+  | 'void_walker'
+  | 'phoenix_lord'
+  | 'ice_queen'
+  | 'storm_titan';
+
+export type EnemyTier = 'common' | 'elite' | 'boss';
+
+export type BossPhase = 1 | 2 | 3;
+
+export type SpecialAbilityType = 
+  | 'enrage' 
+  | 'summon_minions' 
+  | 'shield_wall' 
+  | 'heal_self' 
+  | 'multi_attack'
+  | 'element_absorb'
+  | 'counter_strike'
+  | 'damage_boost'
+  | 'weaken_player';
+
+export interface SpecialAbility {
+  id: string;
+  name: string;
+  description: string;
+  type: SpecialAbilityType;
+  value: number;
+  cooldown: number;
+  currentCooldown?: number;
+}
+
+export interface BossPhaseData {
+  phase: BossPhase;
+  name: string;
+  maxHp: number;
+  attackPower: number;
+  avatarType: AvatarType;
+  abilities: SpecialAbility[];
+  intentPattern?: Array<'attack' | 'defend' | 'buff'>;
+}
 
 export interface Combatant {
   name: string;
@@ -113,6 +157,14 @@ export interface Enemy extends Combatant {
   attackPower: number;
   intent: 'attack' | 'defend' | 'buff';
   intentValue: number;
+  tier: EnemyTier;
+  level: number;
+  isBoss?: boolean;
+  bossPhase?: BossPhase;
+  bossMaxPhases?: number;
+  bossPhases?: BossPhaseData[];
+  abilities?: SpecialAbility[];
+  phaseTransitionTriggered?: boolean;
 }
 
 export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick';

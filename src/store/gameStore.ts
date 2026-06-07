@@ -36,6 +36,11 @@ interface GameActions {
   toggleUpgradePanel: () => void;
   getUpgradeCost: (comboId: string) => number;
   addEssence: (amount: number) => void;
+  checkBossPhaseTransition: () => void;
+  transitionBossPhase: () => void;
+  useEnemyAbility: (abilityId: string) => void;
+  updateEnemyIntent: () => void;
+  decrementAbilityCooldowns: () => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -322,7 +327,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           }, 1200);
         }
       } else {
-        setTimeout(() => get().enemyTurn(), 1000);
+        setTimeout(() => {
+          get().checkBossPhaseTransition();
+          setTimeout(() => {
+            get().enemyTurn();
+          }, 500);
+        }, 500);
       }
     }, 1500);
   },
@@ -338,52 +348,127 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       setTimeout(() => {
         get().applyStatusEffects();
         get().applyPlayerStatusEffects();
+        get().updateEnemyIntent();
+        get().decrementAbilityCooldowns();
         get().nextTurn();
       }, 800);
       return;
     }
 
-    let damage = enemy.attackPower;
+    let totalDamageToPlayer = 0;
     let newPlayerShield = player.shield;
     let newPlayerHp = player.hp;
+    let newEnemyHp = enemy.hp;
+    let newEnemyShield = enemy.shield;
+    let attackCount = 1;
+    let baseDamage = enemy.attackPower;
+    let newPlayerStatusEffects = [...player.statusEffects];
 
-    if (damage > 0) {
-      if (newPlayerShield >= damage) {
-        newPlayerShield -= damage;
-        damage = 0;
-      } else {
-        damage -= newPlayerShield;
-        newPlayerShield = 0;
-        newPlayerHp -= damage;
+    const availableAbilities = enemy.abilities?.filter(a => (a.currentCooldown ?? 0) <= 0) || [];
+    let usedAbility: typeof availableAbilities[0] | null = null;
+
+    if (availableAbilities.length > 0 && Math.random() < 0.4) {
+      usedAbility = availableAbilities[Math.floor(Math.random() * availableAbilities.length)];
+      
+      switch (usedAbility.type) {
+        case 'damage_boost':
+          baseDamage += usedAbility.value;
+          break;
+        case 'multi_attack':
+          attackCount = usedAbility.value;
+          break;
+        case 'shield_wall':
+          newEnemyShield += usedAbility.value;
+          get().addFloatingText('shield', usedAbility.value, 'enemy');
+          break;
+        case 'heal_self':
+          const healAmount = Math.min(usedAbility.value, enemy.maxHp - enemy.hp);
+          newEnemyHp = Math.min(enemy.maxHp, enemy.hp + usedAbility.value);
+          get().addFloatingText('heal', healAmount, 'enemy');
+          break;
+        case 'enrage':
+          baseDamage += usedAbility.value;
+          break;
+        case 'weaken_player':
+          const existingWeakness = newPlayerStatusEffects.find(e => e.type === 'weakness');
+          if (existingWeakness) {
+            existingWeakness.value += usedAbility.value;
+            existingWeakness.duration = Math.max(existingWeakness.duration, 2);
+          } else {
+            newPlayerStatusEffects.push({
+              type: 'weakness',
+              value: usedAbility.value,
+              duration: 2,
+            });
+          }
+          break;
       }
+    }
+
+    if (enemy.intent === 'attack') {
+      const weakness = player.statusEffects.find(e => e.type === 'weakness');
+      let actualDamage = baseDamage;
+      if (weakness && weakness.value > 0) {
+        actualDamage = Math.max(1, actualDamage - weakness.value);
+      }
+
+      for (let i = 0; i < attackCount; i++) {
+        let damage = actualDamage;
+        if (newPlayerShield >= damage) {
+          newPlayerShield -= damage;
+          damage = 0;
+        } else {
+          damage -= newPlayerShield;
+          newPlayerShield = 0;
+          newPlayerHp -= damage;
+        }
+        totalDamageToPlayer += actualDamage;
+      }
+    } else if (enemy.intent === 'defend') {
+      const shieldGain = enemy.intentValue;
+      newEnemyShield += shieldGain;
+      get().addFloatingText('shield', shieldGain, 'enemy');
+    } else if (enemy.intent === 'buff') {
+      const buffValue = enemy.intentValue;
+      baseDamage += Math.floor(buffValue * 0.5);
     }
 
     let thornsDamage = 0;
     const thorns = player.statusEffects.find((e) => e.type === 'thorns');
-    if (thorns && thorns.value > 0) {
-      thornsDamage = thorns.value;
+    if (thorns && thorns.value > 0 && enemy.intent === 'attack') {
+      thornsDamage = thorns.value * attackCount;
     }
 
-    let newEnemyHp = enemy.hp;
     if (thornsDamage > 0) {
-      newEnemyHp = Math.max(0, enemy.hp - thornsDamage);
+      newEnemyHp = Math.max(0, newEnemyHp - thornsDamage);
       get().addFloatingText('damage', thornsDamage, 'enemy');
     }
+
+    const updatedAbilities = enemy.abilities?.map(a => {
+      if (usedAbility && a.id === usedAbility.id) {
+        return { ...a, currentCooldown: a.cooldown };
+      }
+      return a;
+    });
 
     set((state) => ({
       player: {
         ...state.player,
         hp: Math.max(0, newPlayerHp),
         shield: newPlayerShield,
+        statusEffects: newPlayerStatusEffects,
       },
       enemy: state.enemy ? {
         ...state.enemy,
         hp: newEnemyHp,
+        shield: newEnemyShield,
+        attackPower: enemy.intent === 'buff' ? state.enemy.attackPower + Math.floor(enemy.intentValue * 0.5) : state.enemy.attackPower,
+        abilities: updatedAbilities,
       } : state.enemy,
     }));
 
-    if (damage > 0) {
-      get().addFloatingText('damage', damage, 'player');
+    if (totalDamageToPlayer > 0) {
+      get().addFloatingText('damage', totalDamageToPlayer, 'player');
       set({ playerShaking: true });
       setTimeout(() => set({ playerShaking: false }), 500);
     }
@@ -410,6 +495,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       if (mode === 'challenge' || mode === 'endless') {
         get().resetStreak();
       }
+      state.decrementAbilityCooldowns();
+      state.updateEnemyIntent();
       state.nextTurn();
     }, 1000);
   },
@@ -699,5 +786,199 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   addEssence: (amount: number) => {
     set((state) => ({ elementEssence: state.elementEssence + amount }));
+  },
+
+  checkBossPhaseTransition: () => {
+    const { enemy } = get();
+    if (!enemy || !enemy.isBoss || !enemy.bossPhases || !enemy.bossPhase) return;
+    if (enemy.phaseTransitionTriggered) return;
+
+    const currentPhaseIndex = enemy.bossPhase - 1;
+    const nextPhaseIndex = currentPhaseIndex + 1;
+    
+    if (nextPhaseIndex >= enemy.bossPhases.length) return;
+
+    const hpPercent = enemy.hp / enemy.maxHp;
+    const nextPhase = enemy.bossPhases[nextPhaseIndex];
+    const triggerThreshold = nextPhaseIndex / enemy.bossPhases.length + 0.1;
+
+    if (hpPercent <= triggerThreshold) {
+      get().transitionBossPhase();
+    }
+  },
+
+  transitionBossPhase: () => {
+    set((state) => {
+      if (!state.enemy || !state.enemy.isBoss || !state.enemy.bossPhases || !state.enemy.bossPhase) {
+        return state;
+      }
+
+      const currentPhaseIndex = state.enemy.bossPhase - 1;
+      const nextPhaseIndex = currentPhaseIndex + 1;
+
+      if (nextPhaseIndex >= state.enemy.bossPhases.length) {
+        return state;
+      }
+
+      const nextPhaseData = state.enemy.bossPhases[nextPhaseIndex];
+      const currentHpPercent = state.enemy.hp / state.enemy.maxHp;
+      const newMaxHp = nextPhaseData.maxHp;
+      const newHp = Math.floor(newMaxHp * currentHpPercent);
+
+      return {
+        enemy: {
+          ...state.enemy,
+          name: nextPhaseData.name,
+          maxHp: newMaxHp,
+          hp: newHp,
+          attackPower: nextPhaseData.attackPower,
+          avatarType: nextPhaseData.avatarType,
+          bossPhase: nextPhaseData.phase as 1 | 2 | 3,
+          abilities: nextPhaseData.abilities.map(a => ({ ...a, currentCooldown: 0 })),
+          phaseTransitionTriggered: true,
+          shield: 0,
+        },
+        isAnimating: true,
+      };
+    });
+
+    setTimeout(() => {
+      set((state) => ({
+        enemy: state.enemy ? { ...state.enemy, phaseTransitionTriggered: false } : state.enemy,
+        isAnimating: false,
+      }));
+    }, 2000);
+  },
+
+  useEnemyAbility: (abilityId: string) => {
+    const { enemy, player } = get();
+    if (!enemy) return;
+
+    const ability = enemy.abilities?.find(a => a.id === abilityId);
+    if (!ability || (ability.currentCooldown ?? 0) > 0) return;
+
+    let newPlayerHp = player.hp;
+    let newPlayerShield = player.shield;
+    let newEnemyHp = enemy.hp;
+    let newEnemyShield = enemy.shield;
+    let newEnemyAttackPower = enemy.attackPower;
+    let newPlayerStatusEffects = [...player.statusEffects];
+
+    switch (ability.type) {
+      case 'damage_boost':
+        break;
+      
+      case 'shield_wall':
+        newEnemyShield += ability.value;
+        get().addFloatingText('shield', ability.value, 'enemy');
+        break;
+      
+      case 'heal_self':
+        const healAmount = Math.min(ability.value, enemy.maxHp - enemy.hp);
+        newEnemyHp = Math.min(enemy.maxHp, enemy.hp + ability.value);
+        get().addFloatingText('heal', healAmount, 'enemy');
+        break;
+      
+      case 'enrage':
+        newEnemyAttackPower += ability.value;
+        break;
+      
+      case 'weaken_player':
+        const existingWeakness = newPlayerStatusEffects.find(e => e.type === 'weakness');
+        if (existingWeakness) {
+          existingWeakness.value += ability.value;
+          existingWeakness.duration = Math.max(existingWeakness.duration, 2);
+        } else {
+          newPlayerStatusEffects.push({
+            type: 'weakness',
+            value: ability.value,
+            duration: 2,
+          });
+        }
+        break;
+      
+      case 'multi_attack':
+        break;
+      
+      default:
+        break;
+    }
+
+    set((state) => {
+      if (!state.enemy) return state;
+      
+      const updatedAbilities = state.enemy.abilities?.map(a => 
+        a.id === abilityId ? { ...a, currentCooldown: a.cooldown } : a
+      );
+
+      return {
+        enemy: {
+          ...state.enemy,
+          hp: newEnemyHp,
+          shield: newEnemyShield,
+          attackPower: newEnemyAttackPower,
+          abilities: updatedAbilities,
+        },
+        player: {
+          ...state.player,
+          hp: newPlayerHp,
+          shield: newPlayerShield,
+          statusEffects: newPlayerStatusEffects,
+        },
+      };
+    });
+  },
+
+  updateEnemyIntent: () => {
+    set((state) => {
+      if (!state.enemy) return state;
+
+      const intents: Array<'attack' | 'defend' | 'buff'> = ['attack', 'defend', 'buff'];
+      const weights = [0.6, 0.25, 0.15];
+      const rand = Math.random();
+      let cumulative = 0;
+      let selectedIntent: 'attack' | 'defend' | 'buff' = 'attack';
+
+      for (let i = 0; i < intents.length; i++) {
+        cumulative += weights[i];
+        if (rand <= cumulative) {
+          selectedIntent = intents[i];
+          break;
+        }
+      }
+
+      let intentValue = state.enemy.attackPower;
+      if (selectedIntent === 'defend') {
+        intentValue = Math.floor(state.enemy.attackPower * 1.2);
+      } else if (selectedIntent === 'buff') {
+        intentValue = Math.floor(state.enemy.attackPower * 0.8);
+      }
+
+      return {
+        enemy: {
+          ...state.enemy,
+          intent: selectedIntent,
+          intentValue,
+        },
+      };
+    });
+  },
+
+  decrementAbilityCooldowns: () => {
+    set((state) => {
+      if (!state.enemy || !state.enemy.abilities) return state;
+
+      const updatedAbilities = state.enemy.abilities.map(a => ({
+        ...a,
+        currentCooldown: Math.max(0, (a.currentCooldown ?? 0) - 1),
+      }));
+
+      return {
+        enemy: {
+          ...state.enemy,
+          abilities: updatedAbilities,
+        },
+      };
+    });
   },
 }));

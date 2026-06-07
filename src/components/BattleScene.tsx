@@ -182,6 +182,10 @@ export default function BattleScene() {
               intentValue={enemy.intentValue}
               isShaking={enemyShaking}
               size="lg"
+              tier={enemy.tier}
+              bossPhase={enemy.bossPhase}
+              isBoss={enemy.isBoss}
+              level={enemy.level}
             />
           </div>
         </div>

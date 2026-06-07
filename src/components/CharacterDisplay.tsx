@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import HealthBar from './HealthBar';
 import EnemyAvatar from './EnemyAvatar';
 import ElementIcon from './ElementIcon';
-import type { Combatant, StatusEffect } from '@/types/game';
+import type { Combatant, StatusEffect, EnemyTier, BossPhase } from '@/types/game';
 
 interface CharacterDisplayProps {
   character: Combatant;
@@ -12,6 +12,10 @@ interface CharacterDisplayProps {
   intentValue?: number;
   isShaking?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  tier?: EnemyTier;
+  bossPhase?: BossPhase;
+  isBoss?: boolean;
+  level?: number;
 }
 
 const STATUS_ICONS: Record<string, { icon: string; color: string; name: string; glow: string }> = {
@@ -113,6 +117,10 @@ export default function CharacterDisplay({
   intentValue,
   isShaking = false,
   size = 'md',
+  tier = 'common',
+  bossPhase,
+  isBoss = false,
+  level,
 }: CharacterDisplayProps) {
   const sizeConfig = {
     sm: {
@@ -208,7 +216,7 @@ export default function CharacterDisplay({
           {isPlayer ? (
             <PlayerAvatar size={config.avatarSize} />
           ) : character.avatarType ? (
-            <EnemyAvatar type={character.avatarType} size={config.avatarSize} animate />
+            <EnemyAvatar type={character.avatarType} size={config.avatarSize} animate tier={tier} bossPhase={bossPhase} />
           ) : (
             <span className={cn('text-5xl drop-shadow-lg')} style={{ animation: 'float 4s ease-in-out infinite' }}>
               {character.image}
@@ -261,15 +269,40 @@ export default function CharacterDisplay({
 
       {/* 角色名称 */}
       <div className="text-center">
+        {!isPlayer && (
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <span className={cn(
+              'text-xs font-bold px-2 py-0.5 rounded',
+              tier === 'boss' && 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
+              tier === 'elite' && 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white',
+              tier === 'common' && 'bg-slate-600 text-slate-200',
+            )}>
+              {tier === 'boss' && '👑 BOSS'}
+              {tier === 'elite' && '⭐ 精英'}
+              {tier === 'common' && '普通'}
+            </span>
+            {level !== undefined && (
+              <span className="text-xs text-amber-300 font-bold">
+                Lv.{level}
+              </span>
+            )}
+          </div>
+        )}
         <div
           className={cn(
             'font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]',
+            isBoss && 'text-amber-300',
             config.name
           )}
           style={{ fontFamily: "'Cinzel Decorative', serif" }}
         >
           {character.name}
         </div>
+        {isBoss && bossPhase && (
+          <div className="text-xs text-amber-400/80 mt-0.5">
+            阶段 {bossPhase}
+          </div>
+        )}
       </div>
 
       {/* 生命值条 */}

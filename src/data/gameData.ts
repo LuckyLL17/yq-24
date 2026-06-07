@@ -640,7 +640,51 @@ export const getComboWithLevel = (combo: ComboSkill, level: number): ComboSkill 
   };
 };
 
-export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { level: number }> = [
+export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]> = {
+  boss_dragon: [
+    {
+      phase: 1,
+      name: '暗晶龙王',
+      maxHp: 180,
+      attackPower: 18,
+      avatarType: 'boss_dragon',
+      abilities: [
+        { id: 'dragon_breath', name: '龙息', description: '喷射龙焰造成额外伤害', type: 'damage_boost', value: 8, cooldown: 2 },
+        { id: 'dragon_shield', name: '龙鳞护盾', description: '召唤龙鳞护盾保护自己', type: 'shield_wall', value: 20, cooldown: 3 },
+      ],
+      intentPattern: ['attack', 'attack', 'defend', 'buff'],
+    },
+    {
+      phase: 2,
+      name: '暗晶龙王·觉醒',
+      maxHp: 220,
+      attackPower: 24,
+      avatarType: 'boss_dragon_phase2',
+      abilities: [
+        { id: 'dragon_breath', name: '龙息', description: '喷射龙焰造成额外伤害', type: 'damage_boost', value: 12, cooldown: 2 },
+        { id: 'dragon_rage', name: '龙之怒', description: '进入狂暴状态，攻击力大幅提升', type: 'enrage', value: 15, cooldown: 3 },
+        { id: 'tail_sweep', name: '横扫', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 2 },
+      ],
+      intentPattern: ['attack', 'attack', 'attack', 'defend', 'buff'],
+    },
+    {
+      phase: 3,
+      name: '暗晶龙王·终焉',
+      maxHp: 280,
+      attackPower: 30,
+      avatarType: 'boss_dragon_phase3',
+      abilities: [
+        { id: 'apocalypse_breath', name: '毁灭龙息', description: '释放毁灭性龙焰', type: 'damage_boost', value: 18, cooldown: 2 },
+        { id: 'dragon_rage', name: '狂暴之怒', description: '进入狂暴状态', type: 'enrage', value: 20, cooldown: 2 },
+        { id: 'tail_sweep', name: '毁灭横扫', description: '连续攻击三次', type: 'multi_attack', value: 3, cooldown: 2 },
+        { id: 'dark_curse', name: '黑暗诅咒', description: '削弱玩家', type: 'weaken_player', value: 5, cooldown: 4 },
+      ],
+      intentPattern: ['attack', 'attack', 'buff', 'attack', 'defend', 'attack'],
+    },
+  ],
+};
+
+export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tier' | 'level'> & { level: number; tier?: import('@/types/game').EnemyTier }> = [
   {
     name: '火焰小鬼',
     maxHp: 45,
@@ -650,6 +694,7 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '🔥',
     avatarType: 'flame_imp',
     level: 1,
+    tier: 'common',
   },
   {
     name: '水晶精灵',
@@ -660,6 +705,7 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '💧',
     avatarType: 'water_sprite',
     level: 2,
+    tier: 'common',
   },
   {
     name: '风之精灵',
@@ -670,6 +716,21 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '🌪️',
     avatarType: 'wind_spirit',
     level: 2,
+    tier: 'common',
+  },
+  {
+    name: '暗影刺客',
+    maxHp: 50,
+    attackPower: 12,
+    intent: 'attack',
+    intentValue: 14,
+    image: '🗡️',
+    avatarType: 'shadow_assassin',
+    level: 2,
+    tier: 'elite',
+    abilities: [
+      { id: 'backstab', name: '背刺', description: '造成额外伤害', type: 'damage_boost', value: 5, cooldown: 2 },
+    ],
   },
   {
     name: '岩石傀儡',
@@ -680,6 +741,21 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '🗿',
     avatarType: 'earth_golem',
     level: 3,
+    tier: 'common',
+  },
+  {
+    name: '水晶守卫',
+    maxHp: 100,
+    attackPower: 8,
+    intent: 'defend',
+    intentValue: 20,
+    image: '💎',
+    avatarType: 'crystal_guardian',
+    level: 3,
+    tier: 'elite',
+    abilities: [
+      { id: 'crystal_shield', name: '水晶护盾', description: '获得大量护盾', type: 'shield_wall', value: 25, cooldown: 3 },
+    ],
   },
   {
     name: '冰霜水灵',
@@ -690,6 +766,21 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '❄️',
     avatarType: 'water_elemental',
     level: 3,
+    tier: 'common',
+  },
+  {
+    name: '雷霆领主',
+    maxHp: 85,
+    attackPower: 14,
+    intent: 'attack',
+    intentValue: 16,
+    image: '⚡',
+    avatarType: 'thunder_lord',
+    level: 4,
+    tier: 'elite',
+    abilities: [
+      { id: 'chain_lightning', name: '连锁闪电', description: '连续攻击', type: 'multi_attack', value: 2, cooldown: 2 },
+    ],
   },
   {
     name: '熔岩巨兽',
@@ -700,6 +791,21 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     image: '🌋',
     avatarType: 'fire_elemental',
     level: 4,
+    tier: 'common',
+  },
+  {
+    name: '虚空行者',
+    maxHp: 95,
+    attackPower: 13,
+    intent: 'buff',
+    intentValue: 10,
+    image: '🌑',
+    avatarType: 'void_walker',
+    level: 4,
+    tier: 'elite',
+    abilities: [
+      { id: 'void_drain', name: '虚空汲取', description: '回复生命值', type: 'heal_self', value: 15, cooldown: 3 },
+    ],
   },
   {
     name: '风暴领主',
@@ -707,30 +813,101 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects'> & { l
     attackPower: 14,
     intent: 'buff',
     intentValue: 8,
-    image: '⚡',
+    image: '🌪️',
     avatarType: 'wind_spirit',
     level: 4,
+    tier: 'common',
   },
   {
-    name: '暗晶龙王',
-    maxHp: 150,
+    name: '凤凰君主',
+    maxHp: 130,
+    attackPower: 18,
+    intent: 'attack',
+    intentValue: 20,
+    image: '🔥',
+    avatarType: 'phoenix_lord',
+    level: 5,
+    tier: 'elite',
+    abilities: [
+      { id: 'rebirth', name: '浴火重生', description: '回复大量生命', type: 'heal_self', value: 25, cooldown: 4 },
+      { id: 'inferno', name: '烈焰风暴', description: '造成额外伤害', type: 'damage_boost', value: 10, cooldown: 2 },
+    ],
+  },
+  {
+    name: '冰霜女王',
+    maxHp: 120,
+    attackPower: 16,
+    intent: 'defend',
+    intentValue: 22,
+    image: '❄️',
+    avatarType: 'ice_queen',
+    level: 5,
+    tier: 'elite',
+    abilities: [
+      { id: 'frozen_armor', name: '冰霜护甲', description: '获得护盾', type: 'shield_wall', value: 30, cooldown: 3 },
+      { id: 'chilling_touch', name: '寒冰之触', description: '削弱玩家', type: 'weaken_player', value: 3, cooldown: 3 },
+    ],
+  },
+  {
+    name: '风暴泰坦',
+    maxHp: 140,
     attackPower: 20,
     intent: 'attack',
     intentValue: 22,
+    image: '⛈️',
+    avatarType: 'storm_titan',
+    level: 5,
+    tier: 'elite',
+    abilities: [
+      { id: 'thunder_strike', name: '雷霆一击', description: '造成大量额外伤害', type: 'damage_boost', value: 12, cooldown: 2 },
+      { id: 'storm_shield', name: '风暴护盾', description: '获得护盾', type: 'shield_wall', value: 20, cooldown: 3 },
+    ],
+  },
+  {
+    name: '暗晶龙王',
+    maxHp: 180,
+    attackPower: 18,
+    intent: 'attack',
+    intentValue: 20,
     image: '🐉',
     avatarType: 'boss_dragon',
-    level: 5,
+    level: 6,
+    tier: 'boss',
+    isBoss: true,
+    bossPhase: 1,
+    bossMaxPhases: 3,
+    bossPhases: BOSS_PHASES.boss_dragon,
+    abilities: BOSS_PHASES.boss_dragon[0].abilities,
   },
 ];
 
 export const createEnemy = (index: number): Enemy => {
   const enemyData = ENEMIES[index % ENEMIES.length];
-  return {
+  const tier = enemyData.tier || 'common';
+  
+  const enemy: Enemy = {
     ...enemyData,
+    tier,
     hp: enemyData.maxHp,
     shield: 0,
     statusEffects: [],
+    abilities: enemyData.abilities ? enemyData.abilities.map(a => ({ ...a, currentCooldown: 0 })) : [],
+    phaseTransitionTriggered: false,
   };
+
+  if (enemyData.isBoss && enemyData.bossPhases && enemyData.bossPhases.length > 0) {
+    const firstPhase = enemyData.bossPhases[0];
+    enemy.maxHp = firstPhase.maxHp;
+    enemy.hp = firstPhase.maxHp;
+    enemy.attackPower = firstPhase.attackPower;
+    enemy.avatarType = firstPhase.avatarType;
+    enemy.name = firstPhase.name;
+    enemy.abilities = firstPhase.abilities.map(a => ({ ...a, currentCooldown: 0 }));
+    enemy.bossPhase = firstPhase.phase;
+    enemy.bossMaxPhases = enemyData.bossPhases.length;
+  }
+
+  return enemy;
 };
 
 export const CATEGORY_NAMES: Record<string, string> = {
