@@ -4,9 +4,23 @@ import BattleScene from '@/components/BattleScene';
 import GameOverScreen from '@/components/GameOverScreen';
 import LevelCompleteModal from '@/components/LevelCompleteModal';
 import DailyQuests from '@/components/DailyQuests';
+import { useEffect } from 'react';
 
 export default function Home() {
-  const { phase, showLevelComplete } = useGameStore();
+  const { phase, showLevelComplete, checkDailyRefresh, saveGame } = useGameStore();
+
+  useEffect(() => {
+    checkDailyRefresh();
+  }, [checkDailyRefresh]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveGame();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveGame]);
 
   return (
     <div className="min-h-screen w-full">

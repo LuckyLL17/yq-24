@@ -1,13 +1,33 @@
 import { useGameStore } from '@/store/gameStore';
 import { ELEMENTS, COMBOS, CATEGORY_NAMES, CATEGORY_COLORS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS } from '@/data/gameData';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { GameMode, Difficulty } from '@/types/game';
+import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+  const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
+
+  useEffect(() => {
+    setSaveInfo(getBattleSaveInfo());
+  }, []);
+
+  const modeNames: Record<GameMode, string> = {
+    classic: '经典对战',
+    challenge: '挑战模式',
+    endless: '无尽模式',
+    quick: '快速对战',
+  };
+
+  const handleContinue = () => {
+    const success = continueGame();
+    if (success) {
+      setSaveInfo(null);
+    }
+  };
 
   const gameModes = [
     {
@@ -224,6 +244,49 @@ export default function MainMenu() {
           </div>
         ) : (
           <>
+            {/* 继续游戏按钮 */}
+            {saveInfo && (
+              <div className="w-full max-w-2xl mb-4 animate-rise">
+                <button
+                  onClick={handleContinue}
+                  className="group relative w-full overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  {/* 背景渐变 */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* 光泽效果 */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-60" />
+                  
+                  {/* 外发光 */}
+                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+
+                  {/* 边框 */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-white/40" />
+
+                  {/* 内容 */}
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="text-4xl">💾</div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                        继续游戏
+                      </h3>
+                      <p className="text-white/70 text-sm">
+                        {modeNames[saveInfo.mode]} · 第 {saveInfo.level} 关 · 第 {saveInfo.wave} 波
+                      </p>
+                    </div>
+                    <div className="text-white/60 text-sm">
+                      {new Date(saveInfo.savedAt).toLocaleString('zh-CN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {/* 游戏模式选择 */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mb-6">
               {gameModes.map((mode, index) => (

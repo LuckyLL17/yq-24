@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, DailyQuest, ComboCategory } from '@/types/game';
 import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST } from '@/data/gameData';
+import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
 interface GameActions {
   startBattle: (mode?: GameMode, difficulty?: Difficulty) => void;
   startChallenge: (difficulty?: Difficulty) => void;
   startEndless: (difficulty?: Difficulty) => void;
   startQuick: (difficulty?: Difficulty) => void;
+  continueGame: () => boolean;
+  hasSave: () => boolean;
+  hasPermanent: () => boolean;
+  saveGame: () => void;
   goToMenu: () => void;
   selectCard: (card: Card) => void;
   deselectCard: (cardId: string) => void;
@@ -78,38 +83,117 @@ const initialDailyQuestState = () => ({
   sessionComboCategories: [],
 });
 
-const initialState: GameState = {
-  phase: 'menu',
-  mode: 'classic',
-  difficulty: 'normal',
-  turn: 1,
-  player: initialPlayerState(),
-  enemy: null,
-  comboHistory: [],
-  streak: 0,
-  score: 0,
-  elementEssence: 0,
-  isAnimating: false,
-  currentCombo: null,
-  showComboEffect: false,
-  showUpgradePanel: false,
-  showLevelComplete: false,
-  levelEssenceReward: 0,
-  wave: 1,
-  level: 1,
-  maxLevel: 5,
-  floatingTexts: [],
-  enemyShaking: false,
-  playerShaking: false,
-  dailyQuests: initialDailyQuestState(),
-  showDailyQuests: false,
+const loadInitialState = (): GameState => {
+  const baseState: GameState = {
+    phase: 'menu',
+    mode: 'classic',
+    difficulty: 'normal',
+    turn: 1,
+    player: initialPlayerState(),
+    enemy: null,
+    comboHistory: [],
+    streak: 0,
+    score: 0,
+    elementEssence: 0,
+    isAnimating: false,
+    currentCombo: null,
+    showComboEffect: false,
+    showUpgradePanel: false,
+    showLevelComplete: false,
+    levelEssenceReward: 0,
+    wave: 1,
+    level: 1,
+    maxLevel: 5,
+    floatingTexts: [],
+    enemyShaking: false,
+    playerShaking: false,
+    dailyQuests: initialDailyQuestState(),
+    showDailyQuests: false,
+  };
+
+  const permanentData = loadPermanentData();
+  if (permanentData) {
+    baseState.elementEssence = permanentData.elementEssence;
+    baseState.player.comboLevels = permanentData.comboLevels;
+    baseState.dailyQuests = permanentData.dailyQuests;
+  }
+
+  return baseState;
 };
+
+const initialState: GameState = loadInitialState();
 
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
+  hasSave: () => hasBattleSave(),
+
+  hasPermanent: () => hasPermanentSave(),
+
+  saveGame: () => {
+    const state = get();
+    
+    savePermanentData({
+      elementEssence: state.elementEssence,
+      comboLevels: state.player.comboLevels,
+      dailyQuests: state.dailyQuests,
+    });
+
+    if (state.phase === 'battle' && state.enemy) {
+      saveBattleData({
+        phase: state.phase,
+        mode: state.mode,
+        difficulty: state.difficulty,
+        turn: state.turn,
+        player: state.player,
+        enemy: state.enemy,
+        wave: state.wave,
+        level: state.level,
+        maxLevel: state.maxLevel,
+        score: state.score,
+        streak: state.streak,
+        comboHistory: state.comboHistory,
+      });
+    }
+  },
+
+  continueGame: (): boolean => {
+    const battleData = loadBattleData();
+    if (!battleData) return false;
+
+    const permanentData = loadPermanentData();
+    const comboLevels = permanentData?.comboLevels || [];
+
+    set({
+      phase: battleData.phase,
+      mode: battleData.mode,
+      difficulty: battleData.difficulty,
+      turn: battleData.turn,
+      player: {
+        ...battleData.player,
+        comboLevels,
+      },
+      enemy: battleData.enemy,
+      wave: battleData.wave,
+      level: battleData.level,
+      maxLevel: battleData.maxLevel,
+      score: battleData.score,
+      streak: battleData.streak,
+      comboHistory: battleData.comboHistory,
+      isAnimating: false,
+      currentCombo: null,
+      showComboEffect: false,
+      floatingTexts: [],
+      showLevelComplete: false,
+      levelEssenceReward: 0,
+    });
+
+    return true;
+  },
+
   startBattle: (mode: GameMode = 'classic', difficulty: Difficulty = 'normal') => {
     const diffConfig = DIFFICULTY_CONFIG[difficulty];
+    const currentState = get();
     
     let levels = CLASSIC_LEVELS;
     let startEnemyIndex = 0;
@@ -128,6 +212,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     playerState.maxHp = Math.floor(playerState.maxHp * diffConfig.playerHpMultiplier);
     playerState.hp = playerState.maxHp;
+    playerState.comboLevels = currentState.player.comboLevels;
     
     enemy.maxHp = Math.floor(enemy.maxHp * diffConfig.enemyHpMultiplier);
     enemy.hp = enemy.maxHp;
@@ -148,6 +233,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     const maxLevel = mode === 'classic' ? CLASSIC_LEVELS.length : mode === 'quick' ? QUICK_LEVELS.length : 999;
     
+    clearBattleSave();
+    
     set({
       phase: 'battle',
       mode,
@@ -158,7 +245,6 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       comboHistory: [],
       streak: 0,
       score: 0,
-      elementEssence: 0,
       isAnimating: false,
       currentCombo: null,
       showComboEffect: false,
@@ -170,6 +256,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       maxLevel,
       floatingTexts: [],
     });
+
+    setTimeout(() => get().saveGame(), 0);
   },
 
   startChallenge: (difficulty: Difficulty = 'normal') => {
@@ -185,6 +273,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   goToMenu: () => {
+    get().saveGame();
     set({ phase: 'menu' });
   },
 
@@ -396,6 +485,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           const state = get();
           const levels = mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
           if (state.level >= levels.length) {
+            clearBattleSave();
             setTimeout(() => set({ phase: 'victory' }), 800);
           } else {
             setTimeout(() => {
@@ -621,6 +711,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     setTimeout(() => {
       const state = get();
       if (state.player.hp <= 0) {
+        clearBattleSave();
         set({ phase: 'defeat' });
         return;
       }
@@ -632,6 +723,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         if (mode === 'classic' || mode === 'quick') {
           const levels = mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
           if (state.level >= levels.length) {
+            clearBattleSave();
             set({ phase: 'victory' });
           } else {
             get().showLevelCompleteScreen(thornsKillEssence);
@@ -672,6 +764,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       };
     });
     get().drawCards(2);
+    setTimeout(() => get().saveGame(), 0);
   },
 
   drawCards: (count: number) => {
@@ -838,6 +931,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     });
     get().drawCards(2);
     get().trackWave(get().wave);
+    setTimeout(() => get().saveGame(), 0);
   },
 
   nextLevel: () => {
@@ -846,6 +940,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const levels = state.mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
       
       if (nextLevelNum > levels.length) {
+        clearBattleSave();
         return { phase: 'victory' };
       }
       
@@ -875,6 +970,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       };
     });
     get().drawCards(2);
+    setTimeout(() => get().saveGame(), 0);
   },
 
   showLevelCompleteScreen: (essenceReward: number) => {
@@ -964,6 +1060,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         },
       };
     });
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+    });
+
     return true;
   },
 
@@ -1008,6 +1111,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const diffConfig = DIFFICULTY_CONFIG[state.difficulty];
     const adjustedAmount = Math.floor(amount * diffConfig.essenceMultiplier);
     set((state) => ({ elementEssence: state.elementEssence + adjustedAmount }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+    });
   },
 
   checkBossPhaseTransition: () => {
@@ -1248,6 +1356,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           sessionComboCategories: [],
         },
       });
+      savePermanentData({
+        elementEssence: get().elementEssence,
+        comboLevels: get().player.comboLevels,
+        dailyQuests: get().dailyQuests,
+      });
     }
   },
 
@@ -1263,6 +1376,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           freeRefreshUsed: true,
         },
       });
+      savePermanentData({
+        elementEssence: get().elementEssence,
+        comboLevels: get().player.comboLevels,
+        dailyQuests: get().dailyQuests,
+      });
       return true;
     }
 
@@ -1274,6 +1392,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           quests: generateDailyQuests(3),
         },
       }));
+      savePermanentData({
+        elementEssence: get().elementEssence,
+        comboLevels: get().player.comboLevels,
+        dailyQuests: get().dailyQuests,
+      });
       return true;
     }
 
@@ -1295,6 +1418,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         ),
       },
     }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+    });
 
     return true;
   },
