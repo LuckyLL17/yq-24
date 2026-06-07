@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS } from '@/data/gameData';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, DailyQuest, ComboCategory } from '@/types/game';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST } from '@/data/gameData';
 
 interface GameActions {
   startBattle: (mode?: GameMode, difficulty?: Difficulty) => void;
@@ -45,6 +45,15 @@ interface GameActions {
   showLevelCompleteScreen: (essenceReward: number) => void;
   hideLevelCompleteScreen: () => void;
   proceedToNextLevel: () => void;
+  toggleDailyQuests: () => void;
+  refreshDailyQuests: () => boolean;
+  claimQuestReward: (questId: string) => boolean;
+  updateQuestProgress: (type: string, value: number, comboId?: string, category?: ComboCategory) => void;
+  checkDailyRefresh: () => void;
+  trackComboUse: (combo: ComboSkill) => void;
+  trackDamage: (amount: number) => void;
+  trackWin: () => void;
+  trackWave: (wave: number) => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -57,6 +66,17 @@ const initialPlayerState = (): Player => {
     selectedCards: [],
   } as Player;
 };
+
+const initialDailyQuestState = () => ({
+  quests: generateDailyQuests(3),
+  lastRefreshDate: getTodayString(),
+  freeRefreshUsed: false,
+  sessionDamage: 0,
+  sessionCombos: [],
+  sessionWins: 0,
+  sessionMaxWave: 0,
+  sessionComboCategories: [],
+});
 
 const initialState: GameState = {
   phase: 'menu',
@@ -81,6 +101,8 @@ const initialState: GameState = {
   floatingTexts: [],
   enemyShaking: false,
   playerShaking: false,
+  dailyQuests: initialDailyQuestState(),
+  showDailyQuests: false,
 };
 
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
@@ -211,6 +233,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const level = get().getCurrentComboLevel(combo.id);
     const effectiveCombo = getComboWithLevel(combo, level);
 
+    get().trackComboUse(combo);
+
     set({ isAnimating: true, currentCombo: effectiveCombo, showComboEffect: true });
 
     const newHand = player.hand.filter((c) => c.id !== card1.id && c.id !== card2.id);
@@ -281,6 +305,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         }
       }
 
+      get().trackDamage(actualDamageDealt);
       get().addFloatingText('damage', effectiveCombo.damage, 'enemy');
       set({ enemyShaking: true });
       setTimeout(() => set({ enemyShaking: false }), 500);
@@ -365,6 +390,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         const waveBonus = get().wave * 2;
         const essenceReward = killBonus + waveBonus;
         get().addEssence(essenceReward);
+        get().trackWin();
         
         if (mode === 'classic' || mode === 'quick') {
           const state = get();
@@ -559,6 +585,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
     if (thornsDamage > 0) {
       newEnemyHp = Math.max(0, newEnemyHp - thornsDamage);
+      get().trackDamage(thornsDamage);
       get().addFloatingText('damage', thornsDamage, 'enemy');
     }
 
@@ -600,6 +627,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       if (state.enemy && state.enemy.hp <= 0) {
         const thornsKillEssence = 8 + get().wave * 2;
         get().addEssence(thornsKillEssence);
+        get().trackWin();
         
         if (mode === 'classic' || mode === 'quick') {
           const levels = mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
@@ -746,9 +774,14 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       };
     });
 
+    if (totalDamage > 0) {
+      get().trackDamage(totalDamage);
+    }
+
     if (enemyDied) {
       const dotKillEssence = 6 + get().wave * 2;
       get().addEssence(dotKillEssence);
+      get().trackWin();
     }
   },
 
@@ -804,6 +837,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       };
     });
     get().drawCards(2);
+    get().trackWave(get().wave);
   },
 
   nextLevel: () => {
@@ -1192,5 +1226,153 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         },
       };
     });
+  },
+
+  toggleDailyQuests: () => {
+    set((state) => ({ showDailyQuests: !state.showDailyQuests }));
+  },
+
+  checkDailyRefresh: () => {
+    const today = getTodayString();
+    const state = get();
+    if (state.dailyQuests.lastRefreshDate !== today) {
+      set({
+        dailyQuests: {
+          quests: generateDailyQuests(3),
+          lastRefreshDate: today,
+          freeRefreshUsed: false,
+          sessionDamage: 0,
+          sessionCombos: [],
+          sessionWins: 0,
+          sessionMaxWave: 0,
+          sessionComboCategories: [],
+        },
+      });
+    }
+  },
+
+  refreshDailyQuests: () => {
+    const state = get();
+    const { freeRefreshUsed } = state.dailyQuests;
+
+    if (!freeRefreshUsed) {
+      set({
+        dailyQuests: {
+          ...state.dailyQuests,
+          quests: generateDailyQuests(3),
+          freeRefreshUsed: true,
+        },
+      });
+      return true;
+    }
+
+    if (state.elementEssence >= REFRESH_COST) {
+      set((s) => ({
+        elementEssence: s.elementEssence - REFRESH_COST,
+        dailyQuests: {
+          ...s.dailyQuests,
+          quests: generateDailyQuests(3),
+        },
+      }));
+      return true;
+    }
+
+    return false;
+  },
+
+  claimQuestReward: (questId: string) => {
+    const state = get();
+    const quest = state.dailyQuests.quests.find((q) => q.id === questId);
+
+    if (!quest || !quest.completed || quest.claimed) return false;
+
+    set((s) => ({
+      elementEssence: s.elementEssence + quest.reward,
+      dailyQuests: {
+        ...s.dailyQuests,
+        quests: s.dailyQuests.quests.map((q) =>
+          q.id === questId ? { ...q, claimed: true } : q
+        ),
+      },
+    }));
+
+    return true;
+  },
+
+  updateQuestProgress: (type: string, value: number, comboId?: string, category?: ComboCategory) => {
+    set((state) => {
+      const updatedQuests = state.dailyQuests.quests.map((quest) => {
+        if (quest.completed || quest.claimed) return quest;
+
+        let shouldUpdate = false;
+
+        if (quest.type === type) {
+          if (type === 'use_combo' && quest.targetComboId === comboId) {
+            shouldUpdate = true;
+          } else if (type === 'use_combo_category' && quest.targetCategory === category) {
+            shouldUpdate = true;
+          } else if (type === 'win_battle' || type === 'total_damage' || type === 'reach_wave') {
+            shouldUpdate = true;
+          }
+        }
+
+        if (!shouldUpdate) return quest;
+
+        const newProgress = Math.min(quest.target, quest.progress + value);
+        const completed = newProgress >= quest.target;
+
+        return {
+          ...quest,
+          progress: newProgress,
+          completed,
+        };
+      });
+
+      return {
+        dailyQuests: {
+          ...state.dailyQuests,
+          quests: updatedQuests,
+        },
+      };
+    });
+  },
+
+  trackComboUse: (combo: ComboSkill) => {
+    get().updateQuestProgress('use_combo', 1, combo.id);
+    get().updateQuestProgress('use_combo_category', 1, undefined, combo.category);
+  },
+
+  trackDamage: (amount: number) => {
+    if (amount <= 0) return;
+    set((state) => ({
+      dailyQuests: {
+        ...state.dailyQuests,
+        sessionDamage: state.dailyQuests.sessionDamage + amount,
+      },
+    }));
+    get().updateQuestProgress('total_damage', amount);
+  },
+
+  trackWin: () => {
+    set((state) => ({
+      dailyQuests: {
+        ...state.dailyQuests,
+        sessionWins: state.dailyQuests.sessionWins + 1,
+      },
+    }));
+    get().updateQuestProgress('win_battle', 1);
+  },
+
+  trackWave: (wave: number) => {
+    const state = get();
+    if (wave > state.dailyQuests.sessionMaxWave) {
+      set((s) => ({
+        dailyQuests: {
+          ...s.dailyQuests,
+          sessionMaxWave: wave,
+        },
+      }));
+      get().updateQuestProgress('reach_wave', 1);
+    }
   },
 }));

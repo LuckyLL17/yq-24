@@ -1140,3 +1140,154 @@ export const QUICK_LEVELS = [
   { enemyIndex: 3, bossLevel: false },
   { enemyIndex: 14, bossLevel: true },
 ];
+
+interface QuestTemplate {
+  type: import('@/types/game').QuestType;
+  titles: string[];
+  descriptions: string[];
+  targets: Record<import('@/types/game').QuestRarity, number>;
+  rewards: Record<import('@/types/game').QuestRarity, number>;
+}
+
+const QUEST_TEMPLATES: QuestTemplate[] = [
+  {
+    type: 'use_combo',
+    titles: ['组合大师', '元素共鸣', '连击挑战'],
+    descriptions: ['使用指定组合技能 {count} 次', '施放 {comboName} {count} 次'],
+    targets: { common: 3, rare: 5, epic: 8 },
+    rewards: { common: 20, rare: 40, epic: 80 },
+  },
+  {
+    type: 'use_combo_category',
+    titles: ['攻击专家', '防御大师', '治疗者', '控制能手'],
+    descriptions: ['使用{categoryName}类组合技能 {count} 次'],
+    targets: { common: 3, rare: 6, epic: 10 },
+    rewards: { common: 15, rare: 35, epic: 70 },
+  },
+  {
+    type: 'win_battle',
+    titles: ['胜利者', '战场之王', '连胜达人'],
+    descriptions: ['赢得 {count} 场对局'],
+    targets: { common: 1, rare: 3, epic: 5 },
+    rewards: { common: 30, rare: 60, epic: 120 },
+  },
+  {
+    type: 'total_damage',
+    titles: ['伤害输出', '毁灭打击', 'DPS之王'],
+    descriptions: ['累计造成 {count} 点伤害'],
+    targets: { common: 100, rare: 250, epic: 500 },
+    rewards: { common: 25, rare: 50, epic: 100 },
+  },
+  {
+    type: 'reach_wave',
+    titles: ['挑战者', '坚韧不拔', '深渊探索者'],
+    descriptions: ['到达第 {count} 波'],
+    targets: { common: 5, rare: 10, epic: 20 },
+    rewards: { common: 20, rare: 45, epic: 90 },
+  },
+];
+
+const RARITY_WEIGHTS: Record<import('@/types/game').QuestRarity, number> = {
+  common: 60,
+  rare: 30,
+  epic: 10,
+};
+
+const pickRandomRarity = (): import('@/types/game').QuestRarity => {
+  const totalWeight = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
+  let rand = Math.random() * totalWeight;
+  for (const [rarity, weight] of Object.entries(RARITY_WEIGHTS)) {
+    rand -= weight;
+    if (rand <= 0) return rarity as import('@/types/game').QuestRarity;
+  }
+  return 'common';
+};
+
+const generateQuestId = () => `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+const getRandomCombo = (): ComboSkill => {
+  return COMBOS[Math.floor(Math.random() * COMBOS.length)];
+};
+
+const getRandomCategory = (): import('@/types/game').ComboCategory => {
+  const categories: import('@/types/game').ComboCategory[] = [
+    'attack', 'defense', 'heal', 'control', 'lifesteal', 'thorns', 'absorb', 'utility'
+  ];
+  return categories[Math.floor(Math.random() * categories.length)];
+};
+
+const generateSingleQuest = (): import('@/types/game').DailyQuest => {
+  const template = QUEST_TEMPLATES[Math.floor(Math.random() * QUEST_TEMPLATES.length)];
+  const rarity = pickRandomRarity();
+  const target = template.targets[rarity];
+  const reward = template.rewards[rarity];
+  const title = template.titles[Math.floor(Math.random() * template.titles.length)];
+  const descTemplate = template.descriptions[Math.floor(Math.random() * template.descriptions.length)];
+
+  let description = descTemplate.replace('{count}', target.toString());
+  let targetComboId: string | undefined;
+  let targetCategory: import('@/types/game').ComboCategory | undefined;
+
+  if (template.type === 'use_combo') {
+    const combo = getRandomCombo();
+    targetComboId = combo.id;
+    description = description.replace('{comboName}', combo.name);
+  } else if (template.type === 'use_combo_category') {
+    const category = getRandomCategory();
+    targetCategory = category;
+    description = description.replace('{categoryName}', CATEGORY_NAMES[category] || category);
+  }
+
+  return {
+    id: generateQuestId(),
+    type: template.type,
+    title,
+    description,
+    target,
+    progress: 0,
+    reward,
+    rarity,
+    completed: false,
+    claimed: false,
+    targetComboId,
+    targetCategory,
+  };
+};
+
+export const generateDailyQuests = (count: number = 3): import('@/types/game').DailyQuest[] => {
+  const quests: import('@/types/game').DailyQuest[] = [];
+  const usedTypes = new Set<import('@/types/game').QuestType>();
+
+  for (let i = 0; i < count; i++) {
+    let quest: import('@/types/game').DailyQuest;
+    let attempts = 0;
+    do {
+      quest = generateSingleQuest();
+      attempts++;
+    } while (usedTypes.has(quest.type) && attempts < 10);
+    
+    usedTypes.add(quest.type);
+    quests.push(quest);
+  }
+
+  return quests;
+};
+
+export const getTodayString = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+export const QUEST_RARITY_COLORS: Record<import('@/types/game').QuestRarity, string> = {
+  common: 'from-gray-500 to-gray-700',
+  rare: 'from-blue-500 to-blue-700',
+  epic: 'from-purple-500 to-purple-700',
+};
+
+export const QUEST_RARITY_BG: Record<import('@/types/game').QuestRarity, string> = {
+  common: 'bg-gray-500/20 border-gray-500/50',
+  rare: 'bg-blue-500/20 border-blue-500/50',
+  epic: 'bg-purple-500/20 border-purple-500/50',
+};
+
+export const REFRESH_COST = 50;

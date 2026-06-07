@@ -34,6 +34,8 @@ export default function BattleScene() {
     getComboCooldown,
     getCurrentComboLevel,
     toggleUpgradePanel,
+    toggleDailyQuests,
+    dailyQuests,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -181,6 +183,19 @@ export default function BattleScene() {
             <span className="text-lg">💎</span>
             <span className="font-bold text-purple-300">{elementEssence}</span>
           </div>
+
+          <button
+            onClick={toggleDailyQuests}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-300 hover:text-purple-200 transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50 flex items-center gap-2 font-semibold relative"
+          >
+            <span>📜</span>
+            <span>任务</span>
+            {dailyQuests.quests.some(q => q.completed && !q.claimed) && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                !
+              </span>
+            )}
+          </button>
 
           <button
             onClick={toggleUpgradePanel}

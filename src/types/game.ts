@@ -187,6 +187,36 @@ export interface FloatingText {
   y: number;
 }
 
+export type QuestType = 'use_combo' | 'win_battle' | 'total_damage' | 'reach_wave' | 'use_combo_category';
+
+export type QuestRarity = 'common' | 'rare' | 'epic';
+
+export interface DailyQuest {
+  id: string;
+  type: QuestType;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  reward: number;
+  rarity: QuestRarity;
+  completed: boolean;
+  claimed: boolean;
+  targetComboId?: string;
+  targetCategory?: ComboCategory;
+}
+
+export interface DailyQuestState {
+  quests: DailyQuest[];
+  lastRefreshDate: string;
+  freeRefreshUsed: boolean;
+  sessionDamage: number;
+  sessionCombos: string[];
+  sessionWins: number;
+  sessionMaxWave: number;
+  sessionComboCategories: ComboCategory[];
+}
+
 export interface GameState {
   phase: GamePhase;
   mode: GameMode;
@@ -210,4 +240,6 @@ export interface GameState {
   floatingTexts: FloatingText[];
   enemyShaking: boolean;
   playerShaking: boolean;
+  dailyQuests: DailyQuestState;
+  showDailyQuests: boolean;
 }

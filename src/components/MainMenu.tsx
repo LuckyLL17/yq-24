@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import type { GameMode, Difficulty } from '@/types/game';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
@@ -260,8 +260,20 @@ export default function MainMenu() {
               ))}
             </div>
 
-            {/* 组合技图鉴按钮 */}
-            <div className="flex justify-center">
+            {/* 功能按钮 */}
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={toggleDailyQuests}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600/30 to-pink-600/30 hover:from-purple-600/50 hover:to-pink-600/50 text-white/80 hover:text-white transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50 flex items-center gap-2 relative"
+              >
+                <span>📜</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>每日任务</span>
+                {dailyQuests.quests.some(q => q.completed && !q.claimed) && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse">
+                    !
+                  </span>
+                )}
+              </button>
               <button
                 onClick={() => setShowCodex(!showCodex)}
                 className="px-8 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"

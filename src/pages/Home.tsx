@@ -3,6 +3,7 @@ import MainMenu from '@/components/MainMenu';
 import BattleScene from '@/components/BattleScene';
 import GameOverScreen from '@/components/GameOverScreen';
 import LevelCompleteModal from '@/components/LevelCompleteModal';
+import DailyQuests from '@/components/DailyQuests';
 
 export default function Home() {
   const { phase, showLevelComplete } = useGameStore();
@@ -19,6 +20,8 @@ export default function Home() {
           {showLevelComplete && phase === 'battle' && <LevelCompleteModal />}
         </>
       )}
+
+      <DailyQuests />
     </div>
   );
 }
