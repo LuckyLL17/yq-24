@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, SHOP_CATEGORY_NAMES, SHOP_CATEGORY_ICONS, ELEMENTS } from '@/data/gameData';
 import { cn } from '@/lib/utils';
-import type { ShopCategory, Card, Rarity } from '@/types/game';
-import { X } from 'lucide-react';
+import type { ShopCategory, Card, Rarity, CollectedCard } from '@/types/game';
+import { X, LayoutGrid } from 'lucide-react';
 
 export default function Shop() {
   const {
@@ -18,12 +18,18 @@ export default function Shop() {
     isAvatarOwned,
     getEquippedCardBorder,
     getEquippedAvatar,
+    getCollection,
+    getCollectionStats,
   } = useGameStore();
 
-  const [activeCategory, setActiveCategory] = useState<ShopCategory>('card_pack');
+  const [activeCategory, setActiveCategory] = useState<ShopCategory | 'collection'>('card_pack');
   const [openedCards, setOpenedCards] = useState<Card[] | null>(null);
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [collectionFilter, setCollectionFilter] = useState<'all' | Rarity>('all');
+
+  const collection = getCollection();
+  const collectionStats = getCollectionStats();
 
   const showMessage = (msg: string) => {
     setMessage(msg);
@@ -92,7 +98,7 @@ export default function Shop() {
       showMessage('已卸下边框');
     } else {
       equipCardBorder(borderId);
-      showMessage('已装备边框');
+      showMessage('已装备边框，战斗中生效！');
     }
   };
 
@@ -102,7 +108,7 @@ export default function Shop() {
       showMessage('已卸下头像');
     } else {
       equipAvatar(avatarId);
-      showMessage('已装备头像');
+      showMessage('已装备头像，战斗中生效！');
     }
   };
 
@@ -113,6 +119,13 @@ export default function Shop() {
     legendary: 'text-amber-400',
   };
 
+  const rarityBgColors: Record<Rarity, string> = {
+    common: 'from-gray-500/20 to-gray-700/20',
+    rare: 'from-blue-500/20 to-blue-700/20',
+    epic: 'from-purple-500/20 to-purple-700/20',
+    legendary: 'from-amber-500/20 to-orange-600/20',
+  };
+
   const rarityNames: Record<Rarity, string> = {
     common: '普通',
     rare: '稀有',
@@ -120,7 +133,19 @@ export default function Shop() {
     legendary: '传说',
   };
 
-  const categories: ShopCategory[] = ['card_pack', 'card_border', 'avatar'];
+  const categories: (ShopCategory | 'collection')[] = ['card_pack', 'card_border', 'avatar', 'collection'];
+
+  const filteredCollection = collectionFilter === 'all'
+    ? collection
+    : collection.filter((c) => c.rarity === collectionFilter);
+
+  const sortedCollection = [...filteredCollection].sort((a, b) => {
+    const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 };
+    if (rarityOrder[a.rarity] !== rarityOrder[b.rarity]) {
+      return rarityOrder[a.rarity] - rarityOrder[b.rarity];
+    }
+    return a.element.localeCompare(b.element);
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn">
@@ -159,7 +184,7 @@ export default function Shop() {
             </div>
           </div>
 
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 flex-wrap">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -171,8 +196,13 @@ export default function Shop() {
                     : 'bg-slate-700/50 text-white/60 hover:bg-slate-600/50 hover:text-white/80 border border-white/10'
                 )}
               >
-                <span>{SHOP_CATEGORY_ICONS[cat]}</span>
-                <span>{SHOP_CATEGORY_NAMES[cat]}</span>
+                <span>{cat === 'collection' ? '📚' : SHOP_CATEGORY_ICONS[cat]}</span>
+                <span>{cat === 'collection' ? '收藏图鉴' : SHOP_CATEGORY_NAMES[cat]}</span>
+                {cat === 'collection' && collection.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs">
+                    {collectionStats.unique}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -350,6 +380,66 @@ export default function Shop() {
                 })}
               </div>
             )}
+
+            {activeCategory === 'collection' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <LayoutGrid size={18} className="text-amber-400" />
+                      <span className="text-white/70 font-semibold">收藏图鉴</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-white/50">
+                        已收集: <span className="text-amber-400 font-bold">{collectionStats.unique}</span> 种
+                      </span>
+                      <span className="text-white/50">
+                        总计: <span className="text-blue-400 font-bold">{collectionStats.total}</span> 张
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {(['all', 'legendary', 'epic', 'rare', 'common'] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setCollectionFilter(r)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300',
+                          collectionFilter === r
+                            ? r === 'all'
+                              ? 'bg-amber-500 text-white'
+                              : `bg-gradient-to-r ${rarityBgColors[r]} text-white border border-white/20`
+                            : 'bg-slate-700/50 text-white/50 hover:bg-slate-600/50'
+                        )}
+                      >
+                        {r === 'all' ? '全部' : rarityNames[r]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {sortedCollection.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="text-6xl mb-4">📭</div>
+                    <p className="text-white/50 text-lg mb-2">收藏空空如也</p>
+                    <p className="text-white/30 text-sm">购买卡包开启收集之旅吧！</p>
+                    <button
+                      onClick={() => setActiveCategory('card_pack')}
+                      className="mt-4 px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:scale-105 transition-all"
+                    >
+                      去买卡包
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-6 gap-3">
+                    {sortedCollection.map((card) => (
+                      <CollectionCard key={card.id} card={card} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -395,6 +485,9 @@ export default function Shop() {
                   </div>
                 ))}
               </div>
+              <p className="text-white/50 text-sm mb-4">
+                卡牌已加入收藏图鉴！
+              </p>
               <button
                 onClick={() => {
                   setShowPackOpening(false);
@@ -407,6 +500,45 @@ export default function Shop() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CollectionCard({ card }: { card: CollectedCard }) {
+  const rarityColors: Record<Rarity, string> = {
+    common: 'text-gray-400',
+    rare: 'text-blue-400',
+    epic: 'text-purple-400',
+    legendary: 'text-amber-400',
+  };
+
+  const rarityNames: Record<Rarity, string> = {
+    common: '普通',
+    rare: '稀有',
+    epic: '史诗',
+    legendary: '传说',
+  };
+
+  return (
+    <div
+      className={cn(
+        'group relative rounded-xl overflow-hidden bg-slate-800/50 border transition-all duration-300',
+        'border-white/10 hover:border-amber-500/40 hover:scale-105'
+      )}
+    >
+      <div className="relative p-3 flex flex-col items-center text-center">
+        <div className="text-3xl mb-2">{ELEMENTS[card.element].icon}</div>
+        <h4 className="text-xs font-bold text-white mb-1 truncate w-full">{card.name}</h4>
+        <div className={cn('text-[10px] font-semibold mb-1', rarityColors[card.rarity])}>
+          {rarityNames[card.rarity]}
+        </div>
+        <div className="text-xs text-amber-400 font-bold">
+          ×{card.count}
+        </div>
+        <div className="text-[10px] text-white/40 mt-1">
+          ⚔️ {card.power}
+        </div>
       </div>
     </div>
   );

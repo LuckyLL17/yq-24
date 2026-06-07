@@ -69,6 +69,10 @@ interface GameActions {
   isAvatarOwned: (avatarId: string) => boolean;
   getEquippedCardBorder: () => string | null;
   getEquippedAvatar: () => string | null;
+  getCollection: () => import('@/types/game').CollectedCard[];
+  getCollectionStats: () => { total: number; unique: number; byRarity: Record<string, number> };
+  getEquippedCardBorderData: () => import('@/types/game').CardBorder | null;
+  getEquippedAvatarData: () => import('@/types/game').ShopAvatar | null;
 }
 
 const initialPlayerState = (): Player => {
@@ -99,6 +103,7 @@ const initialCosmeticsState = (): PlayerCosmetics => ({
   equippedCardBorder: null,
   equippedAvatar: null,
   openedCardPacks: [],
+  collection: [],
 });
 
 const loadInitialState = (): GameState => {
@@ -1613,13 +1618,41 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       });
     }
 
-    set((s) => ({
-      elementEssence: s.elementEssence - pack.price,
-      cosmetics: {
-        ...s.cosmetics,
-        openedCardPacks: [...s.cosmetics.openedCardPacks, packId],
-      },
-    }));
+    set((s) => {
+      const newCollection = [...s.cosmetics.collection];
+      
+      for (const card of cards) {
+        const collectionKey = `${card.element}_${card.name}`;
+        const existingIndex = newCollection.findIndex((c) => `${c.element}_${c.name}` === collectionKey);
+        
+        if (existingIndex >= 0) {
+          newCollection[existingIndex] = {
+            ...newCollection[existingIndex],
+            count: newCollection[existingIndex].count + 1,
+          };
+        } else {
+          newCollection.push({
+            id: collectionKey,
+            element: card.element,
+            name: card.name,
+            description: card.description,
+            power: card.power,
+            rarity: card.rarity,
+            count: 1,
+            obtainedAt: Date.now(),
+          });
+        }
+      }
+
+      return {
+        elementEssence: s.elementEssence - pack.price,
+        cosmetics: {
+          ...s.cosmetics,
+          openedCardPacks: [...s.cosmetics.openedCardPacks, packId],
+          collection: newCollection,
+        },
+      };
+    });
 
     savePermanentData({
       elementEssence: get().elementEssence,
@@ -1731,5 +1764,36 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   getEquippedAvatar: (): string | null => {
     return get().cosmetics.equippedAvatar;
+  },
+
+  getCollection: () => {
+    return get().cosmetics.collection;
+  },
+
+  getCollectionStats: () => {
+    const collection = get().cosmetics.collection;
+    const total = collection.reduce((sum, c) => sum + c.count, 0);
+    const byRarity: Record<string, number> = {
+      common: 0,
+      rare: 0,
+      epic: 0,
+      legendary: 0,
+    };
+    collection.forEach((c) => {
+      byRarity[c.rarity] = (byRarity[c.rarity] || 0) + c.count;
+    });
+    return { total, unique: collection.length, byRarity };
+  },
+
+  getEquippedCardBorderData: () => {
+    const borderId = get().cosmetics.equippedCardBorder;
+    if (!borderId) return null;
+    return CARD_BORDERS.find((b) => b.id === borderId) || null;
+  },
+
+  getEquippedAvatarData: () => {
+    const avatarId = get().cosmetics.equippedAvatar;
+    if (!avatarId) return null;
+    return SHOP_AVATARS.find((a) => a.id === avatarId) || null;
   },
 }));

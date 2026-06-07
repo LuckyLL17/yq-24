@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
-import { ELEMENTS, RARITY_BG } from '@/data/gameData';
+import { ELEMENTS, RARITY_BG, CARD_BORDERS } from '@/data/gameData';
 import ElementIcon from './ElementIcon';
-import type { Card } from '@/types/game';
+import type { Card, CardBorder } from '@/types/game';
+import { useGameStore } from '@/store/gameStore';
 
 interface ElementCardProps {
   card: Card;
@@ -35,8 +36,11 @@ export default function ElementCard({
   disabled = false,
   showDetails = true,
   animationDelay = 0,
-}: ElementCardProps) {
+  useBorder,
+}: ElementCardProps & { useBorder?: CardBorder | null }) {
   const element = ELEMENTS[card.element];
+  const { getEquippedCardBorderData } = useGameStore();
+  const equippedBorder = useBorder !== undefined ? useBorder : getEquippedCardBorderData();
 
   const sizeClasses = {
     sm: 'w-24 h-36',
@@ -96,13 +100,18 @@ export default function ElementCard({
         style={{ animation: 'pulse 2.5s ease-in-out infinite' }}
       />
 
-      {/* 卡牌主体 - 金色边框 */}
+      {/* 卡牌主体 - 边框 */}
       <div
         className={cn(
           'relative h-full w-full rounded-xl overflow-hidden',
-          'bg-gradient-to-b from-amber-200 via-yellow-600 to-amber-900',
-          'p-[2px]'
+          equippedBorder
+            ? equippedBorder.borderStyle + ' p-0'
+            : 'bg-gradient-to-b from-amber-200 via-yellow-600 to-amber-900 p-[2px]'
         )}
+        style={equippedBorder ? {
+          boxShadow: `0 0 20px ${equippedBorder.glowColor}, inset 0 0 20px ${equippedBorder.glowColor}30`,
+          animation: 'pulse 2.5s ease-in-out infinite',
+        } : {}}
       >
         {/* 内部深色区域 */}
         <div className="relative h-full w-full rounded-[10px] overflow-hidden bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950">

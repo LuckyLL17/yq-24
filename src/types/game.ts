@@ -256,12 +256,24 @@ export interface ShopAvatar {
 
 export type ShopItem = CardPack | CardBorder | ShopAvatar;
 
+export interface CollectedCard {
+  id: string;
+  element: ElementType;
+  name: string;
+  description: string;
+  power: number;
+  rarity: Rarity;
+  count: number;
+  obtainedAt: number;
+}
+
 export interface PlayerCosmetics {
   ownedCardBorders: string[];
   ownedAvatars: string[];
   equippedCardBorder: string | null;
   equippedAvatar: string | null;
   openedCardPacks: string[];
+  collection: CollectedCard[];
 }
 
 export interface GameState {

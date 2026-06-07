@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import HealthBar from './HealthBar';
 import EnemyAvatar from './EnemyAvatar';
 import ElementIcon from './ElementIcon';
+import { useGameStore } from '@/store/gameStore';
 import type { Combatant, EnemyTier, BossPhase, BossIntentType } from '@/types/game';
 
 interface CharacterDisplayProps {
@@ -41,10 +42,19 @@ const INTENT_INFO: Record<BossIntentType, { icon: string; color: string; bg: str
 };
 
 function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const { getEquippedAvatarData } = useGameStore();
+  const equippedAvatar = getEquippedAvatarData();
+
   const sizes = {
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
     lg: 'w-32 h-32',
+  };
+
+  const iconSizes = {
+    sm: 'text-2xl',
+    md: 'text-3xl',
+    lg: 'text-5xl',
   };
   
   return (
@@ -82,23 +92,37 @@ function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
         </div>
       </div>
       
-      {/* 中央水晶 */}
+      {/* 中央头像 */}
       <div 
         className="relative z-10"
         style={{ animation: 'float 3s ease-in-out infinite' }}
       >
-        <div className={cn(
-          'rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500',
-          'shadow-2xl shadow-purple-500/50',
-          size === 'sm' ? 'w-10 h-10' : size === 'md' ? 'w-14 h-14' : 'w-20 h-20',
-        )}>
-          <div className="absolute inset-0.5 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className={cn('text-white font-black', size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-2xl')}>
-              ✦
+        {equippedAvatar ? (
+          <div className={cn(
+            'rounded-full bg-gradient-to-br from-slate-700 to-slate-900',
+            'shadow-2xl shadow-purple-500/30',
+            'flex items-center justify-center',
+            'border-2 border-amber-500/50',
+            size === 'sm' ? 'w-10 h-10' : size === 'md' ? 'w-14 h-14' : 'w-20 h-20',
+          )}>
+            <span className={iconSizes[size]}>
+              {equippedAvatar.icon}
             </span>
           </div>
-        </div>
+        ) : (
+          <div className={cn(
+            'rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500',
+            'shadow-2xl shadow-purple-500/50',
+            size === 'sm' ? 'w-10 h-10' : size === 'md' ? 'w-14 h-14' : 'w-20 h-20',
+          )}>
+            <div className="absolute inset-0.5 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={cn('text-white font-black', size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-2xl')}>
+                ✦
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
