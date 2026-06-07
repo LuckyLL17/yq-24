@@ -3,6 +3,7 @@ import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
 import UpgradePanel from './UpgradePanel';
+import LevelCompleteModal from './LevelCompleteModal';
 import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel, DIFFICULTY_CONFIG } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 
@@ -425,6 +426,9 @@ export default function BattleScene() {
 
       {/* 升级面板 */}
       <UpgradePanel />
+
+      {/* 关卡结算弹窗 */}
+      <LevelCompleteModal />
     </div>
   );
 }

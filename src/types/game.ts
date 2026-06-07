@@ -202,6 +202,8 @@ export interface GameState {
   currentCombo: ComboSkill | null;
   showComboEffect: boolean;
   showUpgradePanel: boolean;
+  showLevelComplete: boolean;
+  levelEssenceReward: number;
   wave: number;
   level: number;
   maxLevel: number;

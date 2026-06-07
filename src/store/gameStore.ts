@@ -42,6 +42,9 @@ interface GameActions {
   useEnemyAbility: (abilityId: string) => void;
   updateEnemyIntent: () => void;
   decrementAbilityCooldowns: () => void;
+  showLevelCompleteScreen: (essenceReward: number) => void;
+  hideLevelCompleteScreen: () => void;
+  proceedToNextLevel: () => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -70,6 +73,8 @@ const initialState: GameState = {
   currentCombo: null,
   showComboEffect: false,
   showUpgradePanel: false,
+  showLevelComplete: false,
+  levelEssenceReward: 0,
   wave: 1,
   level: 1,
   maxLevel: 5,
@@ -136,6 +141,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       currentCombo: null,
       showComboEffect: false,
       showUpgradePanel: false,
+      showLevelComplete: false,
+      levelEssenceReward: 0,
       wave: 1,
       level: 1,
       maxLevel,
@@ -362,8 +369,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             setTimeout(() => set({ phase: 'victory' }), 800);
           } else {
             setTimeout(() => {
-              get().nextLevel();
-            }, 1200);
+              get().showLevelCompleteScreen(essenceReward);
+            }, 800);
           }
         } else {
           setTimeout(() => {
@@ -595,7 +602,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           if (state.level >= levels.length) {
             set({ phase: 'victory' });
           } else {
-            get().nextLevel();
+            get().showLevelCompleteScreen(thornsKillEssence);
           }
         } else {
           get().nextWave();
@@ -830,6 +837,22 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       };
     });
     get().drawCards(2);
+  },
+
+  showLevelCompleteScreen: (essenceReward: number) => {
+    set({
+      showLevelComplete: true,
+      levelEssenceReward: essenceReward,
+    });
+  },
+
+  hideLevelCompleteScreen: () => {
+    set({ showLevelComplete: false });
+  },
+
+  proceedToNextLevel: () => {
+    set({ showLevelComplete: false });
+    get().nextLevel();
   },
 
   addFloatingText: (type: 'damage' | 'heal' | 'shield', value: number, target: 'player' | 'enemy') => {
