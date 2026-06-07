@@ -6,7 +6,7 @@ import type { GameMode, Difficulty } from '@/types/game';
 import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
@@ -324,10 +324,20 @@ export default function MainMenu() {
             </div>
 
             {/* 功能按钮 */}
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-4 flex-wrap">
+              <button
+                onClick={toggleShop}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/50 hover:to-orange-500/50 text-white/80 hover:text-white transition-all duration-300 border border-amber-500/30 hover:border-amber-400/50 flex items-center gap-2 relative"
+              >
+                <span>🏪</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>商店</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1">
+                  💎 {elementEssence}
+                </span>
+              </button>
               <button
                 onClick={toggleDailyQuests}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600/30 to-pink-600/30 hover:from-purple-600/50 hover:to-pink-600/50 text-white/80 hover:text-white transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50 flex items-center gap-2 relative"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600/30 to-pink-600/30 hover:from-purple-600/50 hover:to-pink-600/50 text-white/80 hover:text-white transition-all duration-300 border border-purple-500/30 hover:border-purple-400/50 flex items-center gap-2 relative"
               >
                 <span>📜</span>
                 <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>每日任务</span>
@@ -339,7 +349,7 @@ export default function MainMenu() {
               </button>
               <button
                 onClick={() => setShowCodex(!showCodex)}
-                className="px-8 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"
+                className="px-6 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"
               >
                 <span>📖</span>
                 <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>组合技图鉴</span>

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, DailyQuest, ComboCategory } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST } from '@/data/gameData';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics } from '@/types/game';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
 interface GameActions {
@@ -59,6 +59,16 @@ interface GameActions {
   trackDamage: (amount: number) => void;
   trackWin: () => void;
   trackWave: (wave: number) => void;
+  toggleShop: () => void;
+  buyCardPack: (packId: string) => Card[] | null;
+  buyCardBorder: (borderId: string) => boolean;
+  buyAvatar: (avatarId: string) => boolean;
+  equipCardBorder: (borderId: string | null) => void;
+  equipAvatar: (avatarId: string | null) => void;
+  isCardBorderOwned: (borderId: string) => boolean;
+  isAvatarOwned: (avatarId: string) => boolean;
+  getEquippedCardBorder: () => string | null;
+  getEquippedAvatar: () => string | null;
 }
 
 const initialPlayerState = (): Player => {
@@ -81,6 +91,14 @@ const initialDailyQuestState = () => ({
   sessionWins: 0,
   sessionMaxWave: 0,
   sessionComboCategories: [],
+});
+
+const initialCosmeticsState = (): PlayerCosmetics => ({
+  ownedCardBorders: [],
+  ownedAvatars: [],
+  equippedCardBorder: null,
+  equippedAvatar: null,
+  openedCardPacks: [],
 });
 
 const loadInitialState = (): GameState => {
@@ -109,6 +127,8 @@ const loadInitialState = (): GameState => {
     playerShaking: false,
     dailyQuests: initialDailyQuestState(),
     showDailyQuests: false,
+    showShop: false,
+    cosmetics: initialCosmeticsState(),
   };
 
   const permanentData = loadPermanentData();
@@ -116,6 +136,9 @@ const loadInitialState = (): GameState => {
     baseState.elementEssence = permanentData.elementEssence;
     baseState.player.comboLevels = permanentData.comboLevels;
     baseState.dailyQuests = permanentData.dailyQuests;
+    if (permanentData.cosmetics) {
+      baseState.cosmetics = permanentData.cosmetics;
+    }
   }
 
   return baseState;
@@ -137,6 +160,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       elementEssence: state.elementEssence,
       comboLevels: state.player.comboLevels,
       dailyQuests: state.dailyQuests,
+      cosmetics: state.cosmetics,
     });
 
     if (state.phase === 'battle' && state.enemy) {
@@ -1067,6 +1091,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       elementEssence: get().elementEssence,
       comboLevels: get().player.comboLevels,
       dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
     });
 
     return true;
@@ -1117,6 +1142,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       elementEssence: get().elementEssence,
       comboLevels: get().player.comboLevels,
       dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
     });
   },
 
@@ -1362,6 +1388,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         elementEssence: get().elementEssence,
         comboLevels: get().player.comboLevels,
         dailyQuests: get().dailyQuests,
+        cosmetics: get().cosmetics,
       });
     }
   },
@@ -1382,6 +1409,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         elementEssence: get().elementEssence,
         comboLevels: get().player.comboLevels,
         dailyQuests: get().dailyQuests,
+        cosmetics: get().cosmetics,
       });
       return true;
     }
@@ -1398,6 +1426,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         elementEssence: get().elementEssence,
         comboLevels: get().player.comboLevels,
         dailyQuests: get().dailyQuests,
+        cosmetics: get().cosmetics,
       });
       return true;
     }
@@ -1425,6 +1454,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       elementEssence: get().elementEssence,
       comboLevels: get().player.comboLevels,
       dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
     });
 
     return true;
@@ -1505,5 +1535,201 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }));
       get().updateQuestProgress('reach_wave', 1);
     }
+  },
+
+  toggleShop: () => {
+    set((state) => ({ showShop: !state.showShop }));
+  },
+
+  buyCardPack: (packId: string): Card[] | null => {
+    const state = get();
+    const pack = CARD_PACKS.find((p) => p.id === packId);
+    if (!pack) return null;
+    if (state.elementEssence < pack.price) return null;
+
+    const cards: Card[] = [];
+    const rarityWeights: Record<string, number> = {
+      common: 60,
+      rare: 30,
+      epic: 8,
+      legendary: 2,
+    };
+
+    const pickRarity = (guaranteed?: string): string => {
+      if (guaranteed) {
+        const guaranteedWeights: Record<string, number> = {
+          common: 0,
+          rare: 50,
+          epic: 35,
+          legendary: 15,
+        };
+        if (guaranteed === 'epic') {
+          guaranteedWeights.epic = 70;
+          guaranteedWeights.legendary = 30;
+        } else if (guaranteed === 'legendary') {
+          guaranteedWeights.legendary = 100;
+        }
+        const totalWeight = Object.values(guaranteedWeights).reduce((a, b) => a + b, 0);
+        let rand = Math.random() * totalWeight;
+        for (const [rarity, weight] of Object.entries(guaranteedWeights)) {
+          rand -= weight;
+          if (rand <= 0) return rarity;
+        }
+        return guaranteed;
+      }
+      const totalWeight = Object.values(rarityWeights).reduce((a, b) => a + b, 0);
+      let rand = Math.random() * totalWeight;
+      for (const [rarity, weight] of Object.entries(rarityWeights)) {
+        rand -= weight;
+        if (rand <= 0) return rarity;
+      }
+      return 'common';
+    };
+
+    const elements = ['fire', 'water', 'earth', 'wind', 'lightning', 'light', 'dark'] as const;
+
+    for (let i = 0; i < pack.cardCount; i++) {
+      const isGuaranteed = i === pack.cardCount - 1 && pack.guaranteedRarity;
+      const rarity = pickRarity(isGuaranteed ? pack.guaranteedRarity : undefined);
+      const element = elements[Math.floor(Math.random() * elements.length)];
+      const variants = CARD_VARIANTS[element];
+      const matchingVariants = variants.filter((v) => v.rarity === rarity);
+      
+      let variant;
+      if (matchingVariants.length > 0) {
+        variant = matchingVariants[Math.floor(Math.random() * matchingVariants.length)];
+      } else {
+        variant = variants[Math.floor(Math.random() * variants.length)];
+      }
+
+      const cardId = `pack_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+      cards.push({
+        id: cardId,
+        element,
+        name: variant.name,
+        description: variant.description,
+        power: variant.power,
+        rarity: variant.rarity,
+      });
+    }
+
+    set((s) => ({
+      elementEssence: s.elementEssence - pack.price,
+      cosmetics: {
+        ...s.cosmetics,
+        openedCardPacks: [...s.cosmetics.openedCardPacks, packId],
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+    });
+
+    return cards;
+  },
+
+  buyCardBorder: (borderId: string): boolean => {
+    const state = get();
+    const border = CARD_BORDERS.find((b) => b.id === borderId);
+    if (!border) return false;
+    if (state.elementEssence < border.price) return false;
+    if (state.cosmetics.ownedCardBorders.includes(borderId)) return false;
+
+    set((s) => ({
+      elementEssence: s.elementEssence - border.price,
+      cosmetics: {
+        ...s.cosmetics,
+        ownedCardBorders: [...s.cosmetics.ownedCardBorders, borderId],
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+    });
+
+    return true;
+  },
+
+  buyAvatar: (avatarId: string): boolean => {
+    const state = get();
+    const avatar = SHOP_AVATARS.find((a) => a.id === avatarId);
+    if (!avatar) return false;
+    if (state.elementEssence < avatar.price) return false;
+    if (state.cosmetics.ownedAvatars.includes(avatarId)) return false;
+
+    set((s) => ({
+      elementEssence: s.elementEssence - avatar.price,
+      cosmetics: {
+        ...s.cosmetics,
+        ownedAvatars: [...s.cosmetics.ownedAvatars, avatarId],
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+    });
+
+    return true;
+  },
+
+  equipCardBorder: (borderId: string | null) => {
+    if (borderId && !get().cosmetics.ownedCardBorders.includes(borderId)) return;
+
+    set((s) => ({
+      cosmetics: {
+        ...s.cosmetics,
+        equippedCardBorder: borderId,
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+    });
+  },
+
+  equipAvatar: (avatarId: string | null) => {
+    if (avatarId && !get().cosmetics.ownedAvatars.includes(avatarId)) return;
+
+    set((s) => ({
+      cosmetics: {
+        ...s.cosmetics,
+        equippedAvatar: avatarId,
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+    });
+  },
+
+  isCardBorderOwned: (borderId: string): boolean => {
+    return get().cosmetics.ownedCardBorders.includes(borderId);
+  },
+
+  isAvatarOwned: (avatarId: string): boolean => {
+    return get().cosmetics.ownedAvatars.includes(avatarId);
+  },
+
+  getEquippedCardBorder: (): string | null => {
+    return get().cosmetics.equippedCardBorder;
+  },
+
+  getEquippedAvatar: (): string | null => {
+    return get().cosmetics.equippedAvatar;
   },
 }));

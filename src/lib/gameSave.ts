@@ -1,4 +1,4 @@
-import type { GameState, Player, Enemy, DailyQuestState, GameMode, Difficulty } from '@/types/game';
+import type { GameState, Player, Enemy, DailyQuestState, GameMode, Difficulty, PlayerCosmetics } from '@/types/game';
 
 const STORAGE_KEY_PERMANENT = 'elemental_duels_permanent_save';
 const STORAGE_KEY_BATTLE = 'elemental_duels_battle_save';
@@ -7,6 +7,7 @@ export interface PermanentSaveData {
   elementEssence: number;
   comboLevels: Player['comboLevels'];
   dailyQuests: DailyQuestState;
+  cosmetics: PlayerCosmetics;
   savedAt: number;
 }
 

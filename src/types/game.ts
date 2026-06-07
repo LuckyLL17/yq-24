@@ -217,6 +217,53 @@ export interface DailyQuestState {
   sessionComboCategories: ComboCategory[];
 }
 
+export type ShopCategory = 'card_pack' | 'card_border' | 'avatar';
+
+export type CardPackRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface CardPack {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: CardPackRarity;
+  cardCount: number;
+  guaranteedRarity?: CardPackRarity;
+  icon: string;
+  gradient: string;
+}
+
+export interface CardBorder {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: Rarity;
+  borderStyle: string;
+  glowColor: string;
+  icon: string;
+}
+
+export interface ShopAvatar {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: Rarity;
+  avatarType: AvatarType;
+  icon: string;
+}
+
+export type ShopItem = CardPack | CardBorder | ShopAvatar;
+
+export interface PlayerCosmetics {
+  ownedCardBorders: string[];
+  ownedAvatars: string[];
+  equippedCardBorder: string | null;
+  equippedAvatar: string | null;
+  openedCardPacks: string[];
+}
+
 export interface GameState {
   phase: GamePhase;
   mode: GameMode;
@@ -242,4 +289,6 @@ export interface GameState {
   playerShaking: boolean;
   dailyQuests: DailyQuestState;
   showDailyQuests: boolean;
+  showShop: boolean;
+  cosmetics: PlayerCosmetics;
 }
