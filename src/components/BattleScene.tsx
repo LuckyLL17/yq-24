@@ -3,7 +3,7 @@ import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
 import UpgradePanel from './UpgradePanel';
-import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel } from '@/data/gameData';
+import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel, DIFFICULTY_CONFIG } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 
 export default function BattleScene() {
@@ -13,6 +13,9 @@ export default function BattleScene() {
     turn,
     mode,
     wave,
+    level,
+    maxLevel,
+    difficulty,
     selectCard,
     deselectCard,
     playSelectedCards,
@@ -101,11 +104,20 @@ export default function BattleScene() {
           ← 返回菜单
         </button>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           <div className="text-center">
             <div className="text-xs text-white/50 mb-1">模式</div>
             <div className="text-lg font-bold text-amber-400" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
               {modeNames[mode]}
+            </div>
+          </div>
+
+          <div className="w-px h-10 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+          
+          <div className="text-center">
+            <div className="text-xs text-white/50 mb-1">难度</div>
+            <div className="text-lg font-bold text-white" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              {DIFFICULTY_CONFIG[difficulty].icon} {DIFFICULTY_CONFIG[difficulty].name}
             </div>
           </div>
 
@@ -144,6 +156,19 @@ export default function BattleScene() {
                 <div className="text-xs text-white/50 mb-1">得分</div>
                 <div className="text-2xl font-black text-emerald-400 text-stroke" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
                   {score}
+                </div>
+              </div>
+            </>
+          )}
+
+          {(mode === 'classic' || mode === 'quick') && (
+            <>
+              <div className="w-px h-10 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+              
+              <div className="text-center">
+                <div className="text-xs text-white/50 mb-1">关卡</div>
+                <div className="text-2xl font-black text-purple-400 text-stroke" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                  {level} / {maxLevel}
                 </div>
               </div>
             </>

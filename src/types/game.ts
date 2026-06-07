@@ -177,6 +177,7 @@ export interface Enemy extends Combatant {
 
 export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick';
 export type GamePhase = 'menu' | 'battle' | 'victory' | 'defeat';
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'nightmare';
 
 export interface FloatingText {
   id: string;
@@ -189,6 +190,7 @@ export interface FloatingText {
 export interface GameState {
   phase: GamePhase;
   mode: GameMode;
+  difficulty: Difficulty;
   turn: number;
   player: Player;
   enemy: Enemy | null;
@@ -201,6 +203,8 @@ export interface GameState {
   showComboEffect: boolean;
   showUpgradePanel: boolean;
   wave: number;
+  level: number;
+  maxLevel: number;
   floatingTexts: FloatingText[];
   enemyShaking: boolean;
   playerShaking: boolean;

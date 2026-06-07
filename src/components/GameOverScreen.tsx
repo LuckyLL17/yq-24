@@ -1,12 +1,13 @@
 import { useGameStore } from '@/store/gameStore';
 import { cn } from '@/lib/utils';
+import { DIFFICULTY_CONFIG } from '@/data/gameData';
 
 interface GameOverScreenProps {
   type: 'victory' | 'defeat';
 }
 
 export default function GameOverScreen({ type }: GameOverScreenProps) {
-  const { startBattle, startChallenge, startEndless, startQuick, goToMenu, score, streak, mode, wave } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, goToMenu, score, streak, mode, wave, level, maxLevel, difficulty } = useGameStore();
 
   const isVictory = type === 'victory';
 
@@ -130,43 +131,81 @@ export default function GameOverScreen({ type }: GameOverScreenProps) {
         </p>
 
         {/* 统计数据 */}
-        {(mode === 'challenge' || mode === 'endless') && (
-          <div className="flex justify-center gap-12 mb-10">
-            <div className="text-center">
-              <div
-                className="text-4xl font-black text-amber-400 text-stroke"
-                style={{ fontFamily: "'Cinzel Decorative', serif" }}
-              >
-                {score}
-              </div>
-              <div className="text-white/50 text-sm mt-1">最终得分</div>
-            </div>
-
-            <div className="w-px h-16 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
-
-            <div className="text-center">
-              <div
-                className="text-4xl font-black text-purple-400 text-stroke"
-                style={{ fontFamily: "'Cinzel Decorative', serif" }}
-              >
-                {wave}
-              </div>
-              <div className="text-white/50 text-sm mt-1">到达波次</div>
-            </div>
-
-            <div className="w-px h-16 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
-
-            <div className="text-center">
-              <div
-                className="text-4xl font-black text-emerald-400 text-stroke"
-                style={{ fontFamily: "'Cinzel Decorative', serif" }}
-              >
-                {streak}
-              </div>
-              <div className="text-white/50 text-sm mt-1">最高连击</div>
-            </div>
+        <div className="mb-8">
+          <div className="text-center mb-4">
+            <span className="px-4 py-1 rounded-full bg-slate-800/60 text-white/70 text-sm border border-white/10">
+              难度: {DIFFICULTY_CONFIG[difficulty].icon} {DIFFICULTY_CONFIG[difficulty].name}
+            </span>
           </div>
-        )}
+          
+          {(mode === 'challenge' || mode === 'endless' || mode === 'classic' || mode === 'quick') && (
+            <div className="flex justify-center gap-8 flex-wrap">
+              {(mode === 'challenge' || mode === 'endless') && (
+                <>
+                  <div className="text-center">
+                    <div
+                      className="text-4xl font-black text-amber-400 text-stroke"
+                      style={{ fontFamily: "'Cinzel Decorative', serif" }}
+                    >
+                      {score}
+                    </div>
+                    <div className="text-white/50 text-sm mt-1">最终得分</div>
+                  </div>
+
+                  <div className="w-px h-16 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+
+                  <div className="text-center">
+                    <div
+                      className="text-4xl font-black text-purple-400 text-stroke"
+                      style={{ fontFamily: "'Cinzel Decorative', serif" }}
+                    >
+                      {wave}
+                    </div>
+                    <div className="text-white/50 text-sm mt-1">到达波次</div>
+                  </div>
+
+                  <div className="w-px h-16 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+
+                  <div className="text-center">
+                    <div
+                      className="text-4xl font-black text-emerald-400 text-stroke"
+                      style={{ fontFamily: "'Cinzel Decorative', serif" }}
+                    >
+                      {streak}
+                    </div>
+                    <div className="text-white/50 text-sm mt-1">最高连击</div>
+                  </div>
+                </>
+              )}
+              
+              {(mode === 'classic' || mode === 'quick') && (
+                <>
+                  <div className="text-center">
+                    <div
+                      className="text-4xl font-black text-purple-400 text-stroke"
+                      style={{ fontFamily: "'Cinzel Decorative', serif" }}
+                    >
+                      {level} / {maxLevel}
+                    </div>
+                    <div className="text-white/50 text-sm mt-1">通关进度</div>
+                  </div>
+
+                  <div className="w-px h-16 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+
+                  <div className="text-center">
+                    <div
+                      className="text-4xl font-black text-emerald-400 text-stroke"
+                      style={{ fontFamily: "'Cinzel Decorative', serif" }}
+                    >
+                      {score}
+                    </div>
+                    <div className="text-white/50 text-sm mt-1">最终得分</div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* 按钮组 */}
         <div className="flex flex-col gap-3 w-72 mx-auto">

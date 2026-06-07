@@ -1,4 +1,4 @@
-import type { Card, ComboSkill, Enemy, ElementType, Player } from '@/types/game';
+import type { Card, ComboSkill, Enemy, ElementType, Player, Difficulty } from '@/types/game';
 
 export const ELEMENTS: Record<ElementType, { 
   name: string; 
@@ -1074,3 +1074,69 @@ export const createDeck = (): Card[] => {
 };
 
 export { RARITY_BG };
+
+export const DIFFICULTY_CONFIG: Record<Difficulty, {
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  enemyHpMultiplier: number;
+  enemyAttackMultiplier: number;
+  playerHpMultiplier: number;
+  essenceMultiplier: number;
+}> = {
+  easy: {
+    name: '简单',
+    description: '适合新手，敌人较弱',
+    icon: '🌱',
+    color: 'from-green-500 via-emerald-500 to-teal-500',
+    enemyHpMultiplier: 0.7,
+    enemyAttackMultiplier: 0.7,
+    playerHpMultiplier: 1.2,
+    essenceMultiplier: 0.8,
+  },
+  normal: {
+    name: '普通',
+    description: '标准难度，平衡的挑战',
+    icon: '⚔️',
+    color: 'from-blue-500 via-indigo-500 to-purple-500',
+    enemyHpMultiplier: 1,
+    enemyAttackMultiplier: 1,
+    playerHpMultiplier: 1,
+    essenceMultiplier: 1,
+  },
+  hard: {
+    name: '困难',
+    description: '高阶挑战，敌人强化',
+    icon: '🔥',
+    color: 'from-orange-500 via-red-500 to-rose-500',
+    enemyHpMultiplier: 1.4,
+    enemyAttackMultiplier: 1.3,
+    playerHpMultiplier: 0.9,
+    essenceMultiplier: 1.5,
+  },
+  nightmare: {
+    name: '噩梦',
+    description: '极限挑战，只有强者能生存',
+    icon: '💀',
+    color: 'from-purple-700 via-fuchsia-700 to-rose-700',
+    enemyHpMultiplier: 2,
+    enemyAttackMultiplier: 1.8,
+    playerHpMultiplier: 0.8,
+    essenceMultiplier: 2.5,
+  },
+};
+
+export const CLASSIC_LEVELS = [
+  { enemyIndex: 0, bossLevel: false },
+  { enemyIndex: 2, bossLevel: false },
+  { enemyIndex: 4, bossLevel: false },
+  { enemyIndex: 7, bossLevel: false },
+  { enemyIndex: 14, bossLevel: true },
+];
+
+export const QUICK_LEVELS = [
+  { enemyIndex: 0, bossLevel: false },
+  { enemyIndex: 3, bossLevel: false },
+  { enemyIndex: 14, bossLevel: true },
+];

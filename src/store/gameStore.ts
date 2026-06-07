@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS } from '@/data/gameData';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty } from '@/types/game';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS } from '@/data/gameData';
 
 interface GameActions {
-  startBattle: (mode?: GameMode) => void;
-  startChallenge: () => void;
-  startEndless: () => void;
-  startQuick: () => void;
+  startBattle: (mode?: GameMode, difficulty?: Difficulty) => void;
+  startChallenge: (difficulty?: Difficulty) => void;
+  startEndless: (difficulty?: Difficulty) => void;
+  startQuick: (difficulty?: Difficulty) => void;
   goToMenu: () => void;
   selectCard: (card: Card) => void;
   deselectCard: (cardId: string) => void;
@@ -25,6 +25,7 @@ interface GameActions {
   incrementStreak: () => void;
   resetStreak: () => void;
   nextWave: () => void;
+  nextLevel: () => void;
   addFloatingText: (type: 'damage' | 'heal' | 'shield', value: number, target: 'player' | 'enemy') => void;
   removeFloatingText: (id: string) => void;
   setShaking: (target: 'player' | 'enemy', value: boolean) => void;
@@ -57,6 +58,7 @@ const initialPlayerState = (): Player => {
 const initialState: GameState = {
   phase: 'menu',
   mode: 'classic',
+  difficulty: 'normal',
   turn: 1,
   player: initialPlayerState(),
   enemy: null,
@@ -69,6 +71,8 @@ const initialState: GameState = {
   showComboEffect: false,
   showUpgradePanel: false,
   wave: 1,
+  level: 1,
+  maxLevel: 5,
   floatingTexts: [],
   enemyShaking: false,
   playerShaking: false,
@@ -77,20 +81,50 @@ const initialState: GameState = {
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
-  startBattle: (mode: GameMode = 'classic') => {
-    const enemy = createEnemy(0);
-    const playerState = initialPlayerState();
+  startBattle: (mode: GameMode = 'classic', difficulty: Difficulty = 'normal') => {
+    const diffConfig = DIFFICULTY_CONFIG[difficulty];
+    
+    let levels = CLASSIC_LEVELS;
+    let startEnemyIndex = 0;
     
     if (mode === 'quick') {
-      playerState.maxHp = 60;
-      playerState.hp = 60;
-      enemy.maxHp = 50;
-      enemy.hp = 50;
+      levels = QUICK_LEVELS;
+      startEnemyIndex = QUICK_LEVELS[0].enemyIndex;
+    } else if (mode === 'classic') {
+      startEnemyIndex = CLASSIC_LEVELS[0].enemyIndex;
+    } else if (mode === 'challenge' || mode === 'endless') {
+      startEnemyIndex = 0;
     }
+    
+    const enemy = createEnemy(startEnemyIndex);
+    const playerState = initialPlayerState();
+    
+    playerState.maxHp = Math.floor(playerState.maxHp * diffConfig.playerHpMultiplier);
+    playerState.hp = playerState.maxHp;
+    
+    enemy.maxHp = Math.floor(enemy.maxHp * diffConfig.enemyHpMultiplier);
+    enemy.hp = enemy.maxHp;
+    enemy.attackPower = Math.floor(enemy.attackPower * diffConfig.enemyAttackMultiplier);
+    enemy.intentValue = Math.floor(enemy.intentValue * diffConfig.enemyAttackMultiplier);
+    
+    if (enemy.abilities && enemy.abilities.length > 0) {
+      enemy.abilities = enemy.abilities.map(a => ({
+        ...a,
+        value: Math.floor(a.value * diffConfig.enemyAttackMultiplier),
+      }));
+    }
+    
+    if (mode === 'quick') {
+      playerState.maxHp = Math.floor(playerState.maxHp * 0.7);
+      playerState.hp = playerState.maxHp;
+    }
+    
+    const maxLevel = mode === 'classic' ? CLASSIC_LEVELS.length : mode === 'quick' ? QUICK_LEVELS.length : 999;
     
     set({
       phase: 'battle',
       mode,
+      difficulty,
       turn: 1,
       player: playerState,
       enemy,
@@ -103,20 +137,22 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       showComboEffect: false,
       showUpgradePanel: false,
       wave: 1,
+      level: 1,
+      maxLevel,
       floatingTexts: [],
     });
   },
 
-  startChallenge: () => {
-    get().startBattle('challenge');
+  startChallenge: (difficulty: Difficulty = 'normal') => {
+    get().startBattle('challenge', difficulty);
   },
 
-  startEndless: () => {
-    get().startBattle('endless');
+  startEndless: (difficulty: Difficulty = 'normal') => {
+    get().startBattle('endless', difficulty);
   },
 
-  startQuick: () => {
-    get().startBattle('quick');
+  startQuick: (difficulty: Difficulty = 'normal') => {
+    get().startBattle('quick', difficulty);
   },
 
   goToMenu: () => {
@@ -320,7 +356,15 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         get().addEssence(essenceReward);
         
         if (mode === 'classic' || mode === 'quick') {
-          setTimeout(() => set({ phase: 'victory' }), 800);
+          const state = get();
+          const levels = mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
+          if (state.level >= levels.length) {
+            setTimeout(() => set({ phase: 'victory' }), 800);
+          } else {
+            setTimeout(() => {
+              get().nextLevel();
+            }, 1200);
+          }
         } else {
           setTimeout(() => {
             get().nextWave();
@@ -547,7 +591,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         get().addEssence(thornsKillEssence);
         
         if (mode === 'classic' || mode === 'quick') {
-          set({ phase: 'victory' });
+          const levels = mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
+          if (state.level >= levels.length) {
+            set({ phase: 'victory' });
+          } else {
+            get().nextLevel();
+          }
         } else {
           get().nextWave();
         }
@@ -722,14 +771,60 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const enemyIndex = Math.min(nextWaveNum - 1, ENEMIES.length - 1);
       const newEnemy = createEnemy(enemyIndex);
       
+      const diffConfig = DIFFICULTY_CONFIG[state.difficulty];
       const multiplier = 1 + (nextWaveNum - 1) * 0.2;
-      newEnemy.maxHp = Math.floor(newEnemy.maxHp * multiplier);
+      newEnemy.maxHp = Math.floor(newEnemy.maxHp * multiplier * diffConfig.enemyHpMultiplier);
       newEnemy.hp = newEnemy.maxHp;
-      newEnemy.attackPower = Math.floor(newEnemy.attackPower * multiplier);
-      newEnemy.intentValue = Math.floor(newEnemy.intentValue * multiplier);
+      newEnemy.attackPower = Math.floor(newEnemy.attackPower * multiplier * diffConfig.enemyAttackMultiplier);
+      newEnemy.intentValue = Math.floor(newEnemy.intentValue * multiplier * diffConfig.enemyAttackMultiplier);
+      
+      if (newEnemy.abilities && newEnemy.abilities.length > 0) {
+        newEnemy.abilities = newEnemy.abilities.map(a => ({
+          ...a,
+          value: Math.floor(a.value * multiplier * diffConfig.enemyAttackMultiplier),
+          currentCooldown: 0,
+        }));
+      }
 
       return {
         wave: nextWaveNum,
+        enemy: newEnemy,
+        turn: state.turn + 1,
+      };
+    });
+    get().drawCards(2);
+  },
+
+  nextLevel: () => {
+    set((state) => {
+      const nextLevelNum = state.level + 1;
+      const levels = state.mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
+      
+      if (nextLevelNum > levels.length) {
+        return { phase: 'victory' };
+      }
+      
+      const levelData = levels[nextLevelNum - 1];
+      const newEnemy = createEnemy(levelData.enemyIndex);
+      
+      const diffConfig = DIFFICULTY_CONFIG[state.difficulty];
+      const levelMultiplier = 1 + (nextLevelNum - 1) * 0.15;
+      
+      newEnemy.maxHp = Math.floor(newEnemy.maxHp * diffConfig.enemyHpMultiplier * levelMultiplier);
+      newEnemy.hp = newEnemy.maxHp;
+      newEnemy.attackPower = Math.floor(newEnemy.attackPower * diffConfig.enemyAttackMultiplier * levelMultiplier);
+      newEnemy.intentValue = Math.floor(newEnemy.intentValue * diffConfig.enemyAttackMultiplier * levelMultiplier);
+      
+      if (newEnemy.abilities && newEnemy.abilities.length > 0) {
+        newEnemy.abilities = newEnemy.abilities.map(a => ({
+          ...a,
+          value: Math.floor(a.value * diffConfig.enemyAttackMultiplier * levelMultiplier),
+          currentCooldown: 0,
+        }));
+      }
+
+      return {
+        level: nextLevelNum,
         enemy: newEnemy,
         turn: state.turn + 1,
       };
@@ -848,7 +943,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   addEssence: (amount: number) => {
-    set((state) => ({ elementEssence: state.elementEssence + amount }));
+    const state = get();
+    const diffConfig = DIFFICULTY_CONFIG[state.difficulty];
+    const adjustedAmount = Math.floor(amount * diffConfig.essenceMultiplier);
+    set((state) => ({ elementEssence: state.elementEssence + adjustedAmount }));
   },
 
   checkBossPhaseTransition: () => {

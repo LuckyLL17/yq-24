@@ -1,11 +1,13 @@
 import { useGameStore } from '@/store/gameStore';
-import { ELEMENTS, COMBOS, CATEGORY_NAMES, CATEGORY_COLORS } from '@/data/gameData';
+import { ELEMENTS, COMBOS, CATEGORY_NAMES, CATEGORY_COLORS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS } from '@/data/gameData';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { GameMode, Difficulty } from '@/types/game';
 
 export default function MainMenu() {
   const { startBattle, startChallenge, startEndless, startQuick } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
   const gameModes = [
     {
@@ -15,7 +17,7 @@ export default function MainMenu() {
       icon: '⚔️',
       color: 'from-blue-600 via-purple-600 to-blue-600',
       glow: 'shadow-blue-500/30',
-      onClick: () => startBattle('classic'),
+      levels: CLASSIC_LEVELS.length,
     },
     {
       id: 'challenge',
@@ -24,7 +26,7 @@ export default function MainMenu() {
       icon: '🏆',
       color: 'from-amber-500 via-orange-500 to-red-500',
       glow: 'shadow-orange-500/30',
-      onClick: () => startChallenge(),
+      levels: '∞',
     },
     {
       id: 'endless',
@@ -33,7 +35,7 @@ export default function MainMenu() {
       icon: '♾️',
       color: 'from-purple-600 via-pink-600 to-purple-600',
       glow: 'shadow-purple-500/30',
-      onClick: () => startEndless(),
+      levels: '∞',
     },
     {
       id: 'quick',
@@ -42,9 +44,41 @@ export default function MainMenu() {
       icon: '⚡',
       color: 'from-cyan-500 via-teal-500 to-emerald-500',
       glow: 'shadow-cyan-500/30',
-      onClick: () => startQuick(),
+      levels: QUICK_LEVELS.length,
     },
   ];
+
+  const difficulties = Object.entries(DIFFICULTY_CONFIG).map(([key, config]) => ({
+    id: key as Difficulty,
+    ...config,
+  }));
+
+  const handleModeSelect = (mode: GameMode) => {
+    setSelectedMode(mode);
+  };
+
+  const handleDifficultySelect = (difficulty: Difficulty) => {
+    if (!selectedMode) return;
+    
+    switch (selectedMode) {
+      case 'classic':
+        startBattle('classic', difficulty);
+        break;
+      case 'challenge':
+        startChallenge(difficulty);
+        break;
+      case 'endless':
+        startEndless(difficulty);
+        break;
+      case 'quick':
+        startQuick(difficulty);
+        break;
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedMode(null);
+  };
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden battle-ground">
@@ -92,7 +126,7 @@ export default function MainMenu() {
       {/* 主内容 */}
       <div className="relative z-10 flex flex-col items-center">
         {/* Logo和标题 */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           {/* 四元素图标排列 */}
           <div className="flex justify-center gap-6 mb-6">
             {Object.values(ELEMENTS).map((el, i) => (
@@ -119,7 +153,7 @@ export default function MainMenu() {
 
           {/* 游戏标题 */}
           <h1
-            className="text-7xl font-black text-gradient-gold mb-3"
+            className="text-6xl font-black text-gradient-gold mb-3"
             style={{ 
               fontFamily: "'Cinzel Decorative', serif",
               textShadow: '0 0 60px rgba(251, 191, 36, 0.4)',
@@ -128,51 +162,116 @@ export default function MainMenu() {
             元素对决
           </h1>
           
-          <p className="text-xl text-white/60 tracking-[0.5em] mb-2">ELEMENTAL DUELS</p>
-          <p className="text-amber-400/70 text-base tracking-wider">两两搭配 · 释放组合技 · 策略对决</p>
+          <p className="text-lg text-white/60 tracking-[0.5em] mb-2">ELEMENTAL DUELS</p>
+          <p className="text-amber-400/70 text-sm tracking-wider">两两搭配 · 释放组合技 · 策略对决</p>
         </div>
 
-        {/* 游戏模式选择 */}
-        <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mb-8">
-          {gameModes.map((mode, index) => (
-            <button
-              key={mode.id}
-              onClick={mode.onClick}
-              className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:scale-105 active:scale-95"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {/* 背景渐变 */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-80 group-hover:opacity-100 transition-opacity duration-300`} />
-              
-              {/* 光泽效果 */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60" />
-              
-              {/* 外发光 */}
-              <div className={`absolute -inset-1 rounded-2xl bg-gradient-to-br ${mode.color} blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300`} />
+        {/* 难度选择界面 */}
+        {selectedMode ? (
+          <div className="animate-rise">
+            <div className="text-center mb-6">
+              <button
+                onClick={handleBack}
+                className="mb-4 px-4 py-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2 mx-auto"
+              >
+                ← 返回模式选择
+              </button>
+              <h2 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                选择难度
+              </h2>
+              <p className="text-white/60">
+                {gameModes.find(m => m.id === selectedMode)?.name} · 共 {gameModes.find(m => m.id === selectedMode)?.levels} 关
+              </p>
+            </div>
 
-              {/* 边框 */}
-              <div className="absolute inset-0 rounded-2xl border-2 border-white/30" />
+            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+              {difficulties.map((diff, index) => (
+                <button
+                  key={diff.id}
+                  onClick={() => handleDifficultySelect(diff.id)}
+                  className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:scale-105 active:scale-95"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {/* 背景渐变 */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${diff.color} opacity-80 group-hover:opacity-100 transition-opacity duration-300`} />
+                  
+                  {/* 光泽效果 */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60" />
+                  
+                  {/* 外发光 */}
+                  <div className={`absolute -inset-1 rounded-2xl bg-gradient-to-br ${diff.color} blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300`} />
 
-              {/* 内容 */}
-              <div className="relative z-10">
-                <div className="text-4xl mb-2">{mode.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
-                  {mode.name}
-                </h3>
-                <p className="text-white/70 text-sm">{mode.description}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+                  {/* 边框 */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-white/30" />
 
-        {/* 组合技图鉴按钮 */}
-        <button
-          onClick={() => setShowCodex(!showCodex)}
-          className="px-8 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"
-        >
-          <span>📖</span>
-          <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>组合技图鉴</span>
-        </button>
+                  {/* 内容 */}
+                  <div className="relative z-10">
+                    <div className="text-4xl mb-2">{diff.icon}</div>
+                    <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                      {diff.name}
+                    </h3>
+                    <p className="text-white/70 text-sm mb-3">{diff.description}</p>
+                    <div className="text-xs text-white/60 space-y-1">
+                      <div>敌人生命: ×{diff.enemyHpMultiplier}</div>
+                      <div>敌人攻击: ×{diff.enemyAttackMultiplier}</div>
+                      <div>玩家生命: ×{diff.playerHpMultiplier}</div>
+                      <div>精华获取: ×{diff.essenceMultiplier}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* 游戏模式选择 */}
+            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mb-6">
+              {gameModes.map((mode, index) => (
+                <button
+                  key={mode.id}
+                  onClick={() => handleModeSelect(mode.id as GameMode)}
+                  className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:scale-105 active:scale-95"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {/* 背景渐变 */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-80 group-hover:opacity-100 transition-opacity duration-300`} />
+                  
+                  {/* 光泽效果 */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60" />
+                  
+                  {/* 外发光 */}
+                  <div className={`absolute -inset-1 rounded-2xl bg-gradient-to-br ${mode.color} blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300`} />
+
+                  {/* 边框 */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-white/30" />
+
+                  {/* 内容 */}
+                  <div className="relative z-10">
+                    <div className="text-4xl mb-2">{mode.icon}</div>
+                    <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                      {mode.name}
+                    </h3>
+                    <p className="text-white/70 text-sm">{mode.description}</p>
+                    <div className="mt-2 text-xs text-white/60">
+                      关卡数: {mode.levels}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* 组合技图鉴按钮 */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowCodex(!showCodex)}
+                className="px-8 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-white/80 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-2"
+              >
+                <span>📖</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>组合技图鉴</span>
+              </button>
+            </div>
+          </>
+        )}
 
         {/* 组合技图鉴展开 */}
         {showCodex && (
