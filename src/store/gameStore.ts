@@ -927,6 +927,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         wave: nextWaveNum,
         enemy: newEnemy,
         turn: state.turn + 1,
+        showLevelComplete: false,
       };
     });
     get().drawCards(2);
@@ -967,6 +968,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         level: nextLevelNum,
         enemy: newEnemy,
         turn: state.turn + 1,
+        showLevelComplete: false,
       };
     });
     get().drawCards(2);
