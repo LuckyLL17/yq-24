@@ -167,9 +167,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   selectCard: (card: Card) => {
-    const { player, isAnimating } = get();
+    const { player, isAnimating, enemy, showLevelComplete } = get();
     const selectedCards = player.selectedCards;
     if (isAnimating) return;
+    if (!enemy || enemy.hp <= 0) return;
+    if (showLevelComplete) return;
     if (selectedCards.length >= 2) return;
     if (selectedCards.find((c) => c.id === card.id)) return;
     set((state) => ({
@@ -181,8 +183,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   deselectCard: (cardId: string) => {
-    const { isAnimating } = get();
+    const { isAnimating, showLevelComplete, enemy } = get();
     if (isAnimating) return;
+    if (showLevelComplete) return;
+    if (!enemy || enemy.hp <= 0) return;
     set((state) => ({
       player: {
         ...state.player,
@@ -192,8 +196,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   playSelectedCards: () => {
-    const { player, enemy, isAnimating, mode } = get();
+    const { player, enemy, isAnimating, mode, showLevelComplete } = get();
     if (isAnimating || !enemy) return;
+    if (enemy.hp <= 0) return;
+    if (showLevelComplete) return;
     if (player.selectedCards.length !== 2) return;
 
     const [card1, card2] = player.selectedCards;
@@ -325,14 +331,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }
 
       set((s) => ({
-        enemy: isEnemyDead
-          ? null
-          : {
-              ...currentEnemy,
-              hp: Math.max(0, newEnemyHp),
-              shield: newEnemyShield,
-              statusEffects: newEnemyStatusEffects,
-            },
+        enemy: {
+          ...currentEnemy,
+          hp: Math.max(0, newEnemyHp),
+          shield: newEnemyShield,
+          statusEffects: newEnemyStatusEffects,
+        },
         player: {
           ...s.player,
           hp: newPlayerHp,

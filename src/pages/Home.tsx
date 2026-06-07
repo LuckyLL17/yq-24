@@ -2,9 +2,10 @@ import { useGameStore } from '@/store/gameStore';
 import MainMenu from '@/components/MainMenu';
 import BattleScene from '@/components/BattleScene';
 import GameOverScreen from '@/components/GameOverScreen';
+import LevelCompleteModal from '@/components/LevelCompleteModal';
 
 export default function Home() {
-  const { phase } = useGameStore();
+  const { phase, showLevelComplete } = useGameStore();
 
   return (
     <div className="min-h-screen w-full">
@@ -15,6 +16,7 @@ export default function Home() {
           <BattleScene />
           {phase === 'victory' && <GameOverScreen type="victory" />}
           {phase === 'defeat' && <GameOverScreen type="defeat" />}
+          {showLevelComplete && phase === 'battle' && <LevelCompleteModal />}
         </>
       )}
     </div>
