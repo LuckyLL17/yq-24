@@ -24,24 +24,6 @@ const innerSizes = {
   xl: 'w-36 h-36',
 };
 
-const tierBorderStyles: Record<EnemyTier, { border: string; glow: string; ring: string }> = {
-  common: {
-    border: 'border-2 border-slate-400/50',
-    glow: 'shadow-slate-500/30',
-    ring: 'from-slate-400 via-slate-500 to-slate-600',
-  },
-  elite: {
-    border: 'border-2 border-blue-400/70',
-    glow: 'shadow-blue-500/50',
-    ring: 'from-blue-400 via-indigo-500 to-purple-500',
-  },
-  boss: {
-    border: 'border-3 border-amber-400/80',
-    glow: 'shadow-amber-500/60',
-    ring: 'from-amber-400 via-orange-500 to-red-500',
-  },
-};
-
 function FireEnemy({ size = 'md' }: { size?: string }) {
   const s = size as keyof typeof innerSizes;
   return (
@@ -646,6 +628,236 @@ function StormTitan({ size = 'md' }: { size?: string }) {
   );
 }
 
+function BossCrystalPhase2({ size = 'md' }: { size?: string }) {
+  const s = size as keyof typeof innerSizes;
+  return (
+    <svg viewBox="0 0 100 100" className={cn(innerSizes[s])} style={{ filter: 'drop-shadow(0 0 16px rgba(100, 220, 255, 0.9))' }}>
+      <defs>
+        <radialGradient id="crystalBoss2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#e0f7fa" />
+          <stop offset="30%" stopColor="#4dd0e1" />
+          <stop offset="65%" stopColor="#00acc1" />
+          <stop offset="100%" stopColor="#006064" />
+        </radialGradient>
+      </defs>
+      <path d="M50 8 L78 28 L82 55 L70 85 L30 85 L18 55 L22 28 Z" fill="url(#crystalBoss2)" />
+      <polygon points="50,8 62,22 50,28 38,22" fill="#fff" opacity="0.7" />
+      <polygon points="28,32 38,28 44,48 34,55" fill="#fff" opacity="0.4" />
+      <polygon points="72,32 62,28 56,48 66,55" fill="#006064" opacity="0.4" />
+      <polygon points="35,58 45,70 40,82 28,72" fill="#fff" opacity="0.3" />
+      <polygon points="65,58 55,70 60,82 72,72" fill="#006064" opacity="0.3" />
+      <path d="M50 5 L53 18 L50 14 L47 18 Z" fill="#fff">
+        <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+      </path>
+      <path d="M20 30 L10 22 L18 38 Z" fill="#b2ebf2" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2.5s" repeatCount="indefinite" />
+      </path>
+      <path d="M80 30 L90 22 L82 38 Z" fill="#b2ebf2" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="3s" repeatCount="indefinite" />
+      </path>
+      <ellipse cx="38" cy="48" rx="9" ry="8" fill="#fff" />
+      <ellipse cx="62" cy="48" rx="9" ry="8" fill="#fff" />
+      <ellipse cx="38" cy="49" rx="5" ry="6" fill="#00838f" />
+      <ellipse cx="62" cy="49" rx="5" ry="6" fill="#00838f" />
+      <circle cx="39" cy="47" r="2" fill="#006064" />
+      <circle cx="61" cy="47" r="2" fill="#006064" />
+      <circle cx="40" cy="45.5" r="0.8" fill="#fff" />
+      <circle cx="62" cy="45.5" r="0.8" fill="#fff" />
+      <path d="M38 68 Q50 76, 62 68" stroke="#006064" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <circle cx="15" cy="60" r="4" fill="#fff" opacity="0.6">
+        <animate attributeName="cy" values="60;50;60" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="85" cy="55" r="3" fill="#fff" opacity="0.5">
+        <animate attributeName="cy" values="55;45;55" dur="2.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+function BossCrystalPhase3({ size = 'md' }: { size?: string }) {
+  const s = size as keyof typeof innerSizes;
+  return (
+    <svg viewBox="0 0 100 100" className={cn(innerSizes[s])} style={{ filter: 'drop-shadow(0 0 20px rgba(200, 255, 255, 1))' }}>
+      <defs>
+        <radialGradient id="crystalBoss3" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="20%" stopColor="#e0f7fa" />
+          <stop offset="50%" stopColor="#26c6da" />
+          <stop offset="80%" stopColor="#0097a7" />
+          <stop offset="100%" stopColor="#004d40" />
+        </radialGradient>
+      </defs>
+      <path d="M10 50 Q20 15, 50 8 Q80 15, 90 50 Q80 88, 50 92 Q20 88, 10 50 Z" fill="url(#crystalBoss3)" />
+      <polygon points="50,8 65,25 50,30 35,25" fill="#fff" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite" />
+      </polygon>
+      <polygon points="25,30 38,25 44,48 30,55" fill="#fff" opacity="0.5" />
+      <polygon points="75,30 62,25 56,48 70,55" fill="#004d40" opacity="0.4" />
+      <polygon points="20,55 32,60 28,80 15,72" fill="#fff" opacity="0.35" />
+      <polygon points="80,55 68,60 72,80 85,72" fill="#004d40" opacity="0.35" />
+      <polygon points="50,92 60,75 50,80 40,75" fill="#fff" opacity="0.4" />
+      <path d="M50 2 L54 15 L50 11 L46 15 Z" fill="#fff">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+      </path>
+      <path d="M5 45 L0 38 L3 55 Z" fill="#b2ebf2" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.5s" repeatCount="indefinite" />
+      </path>
+      <path d="M95 45 L100 38 L97 55 Z" fill="#b2ebf2" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3s" repeatCount="indefinite" />
+      </path>
+      <path d="M8 70 L0 75 L5 82 Z" fill="#80deea" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.8s" repeatCount="indefinite" />
+      </path>
+      <path d="M92 70 L100 75 L95 82 Z" fill="#80deea" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="3.2s" repeatCount="indefinite" />
+      </path>
+      <ellipse cx="35" cy="45" rx="11" ry="10" fill="#fff" />
+      <ellipse cx="65" cy="45" rx="11" ry="10" fill="#fff" />
+      <ellipse cx="36" cy="46" rx="6" ry="7" fill="#00bcd4" />
+      <ellipse cx="64" cy="46" rx="6" ry="7" fill="#00bcd4" />
+      <circle cx="37" cy="44" r="3" fill="#006064" />
+      <circle cx="63" cy="44" r="3" fill="#006064" />
+      <circle cx="38.5" cy="42" r="1.2" fill="#fff" />
+      <circle cx="64.5" cy="42" r="1.2" fill="#fff" />
+      <path d="M35 70 Q50 80, 65 70" stroke="#004d40" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M42 71 L45 78 L48 71 Z" fill="#fff" />
+      <path d="M52 71 L55 78 L58 71 Z" fill="#fff" />
+      <circle cx="25" cy="35" r="3" fill="#fff" opacity="0.7">
+        <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="75" cy="38" r="2.5" fill="#fff" opacity="0.6">
+        <animate attributeName="r" values="2.5;4;2.5" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.8s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+function BossVoidPhase2({ size = 'md' }: { size?: string }) {
+  const s = size as keyof typeof innerSizes;
+  return (
+    <svg viewBox="0 0 100 100" className={cn(innerSizes[s])} style={{ filter: 'drop-shadow(0 0 14px rgba(80, 0, 150, 0.9))' }}>
+      <defs>
+        <radialGradient id="voidBoss2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#7c4dff" />
+          <stop offset="35%" stopColor="#651fff" />
+          <stop offset="70%" stopColor="#311b92" />
+          <stop offset="100%" stopColor="#1a0033" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="55" rx="32" ry="34" fill="url(#voidBoss2)" />
+      <ellipse cx="50" cy="38" rx="28" ry="24" fill="url(#voidBoss2)" />
+      <path d="M50 10 L44 25 L50 20 L56 25 Z" fill="#b388ff" className="animate-pulse" />
+      <path d="M28 18 L22 5 L36 16 Z" fill="#7c4dff" />
+      <path d="M72 18 L78 5 L64 16 Z" fill="#7c4dff" />
+      <path d="M18 28 L12 12 L28 22 Z" fill="#651fff" />
+      <path d="M82 28 L88 12 L72 22 Z" fill="#651fff" />
+      <ellipse cx="36" cy="42" rx="10" ry="9" fill="#e1bee7" />
+      <ellipse cx="64" cy="42" rx="10" ry="9" fill="#e1bee7" />
+      <ellipse cx="37" cy="44" rx="6" ry="7" fill="#6200ea" />
+      <ellipse cx="63" cy="44" rx="6" ry="7" fill="#6200ea" />
+      <circle cx="38" cy="43" r="3" fill="#311b92" />
+      <circle cx="62" cy="43" r="3" fill="#311b92" />
+      <circle cx="39.5" cy="41" r="1.2" fill="#fff" />
+      <circle cx="63.5" cy="41" r="1.2" fill="#fff" />
+      <path d="M22 32 L42 38" stroke="#1a0033" strokeWidth="4" strokeLinecap="round" />
+      <path d="M78 32 L58 38" stroke="#1a0033" strokeWidth="4" strokeLinecap="round" />
+      <path d="M40 62 Q50 68, 60 62" stroke="#311b92" strokeWidth="2.5" fill="none" />
+      <circle cx="20" cy="25" r="4" fill="#b388ff" opacity="0.7">
+        <animate attributeName="cy" values="25;15;25" dur="2.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="80" cy="30" r="3.5" fill="#b388ff" opacity="0.6">
+        <animate attributeName="cy" values="30;18;30" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="18" cy="75" r="3" fill="#b388ff" opacity="0.5">
+        <animate attributeName="cy" values="75;65;75" dur="3.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="82" cy="72" r="2.5" fill="#b388ff" opacity="0.5">
+        <animate attributeName="cy" values="72;62;72" dur="2.8s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="40" cy="80" r="2" fill="#e1bee7" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="60" cy="78" r="2.5" fill="#e1bee7" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.3s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+function BossVoidPhase3({ size = 'md' }: { size?: string }) {
+  const s = size as keyof typeof innerSizes;
+  return (
+    <svg viewBox="0 0 100 100" className={cn(innerSizes[s])} style={{ filter: 'drop-shadow(0 0 18px rgba(150, 0, 255, 1))' }}>
+      <defs>
+        <radialGradient id="voidBoss3" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ea80fc" />
+          <stop offset="25%" stopColor="#d500f9" />
+          <stop offset="55%" stopColor="#7b1fa2" />
+          <stop offset="85%" stopColor="#4a148c" />
+          <stop offset="100%" stopColor="#1a0033" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="55" rx="36" ry="36" fill="url(#voidBoss3)" />
+      <ellipse cx="50" cy="36" rx="30" ry="26" fill="url(#voidBoss3)" />
+      <path d="M50 5 L42 22 L50 17 L58 22 Z" fill="#f8bbd0">
+        <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+      </path>
+      <path d="M24 15 L16 0 L34 12 Z" fill="#d500f9" />
+      <path d="M76 15 L84 0 L66 12 Z" fill="#d500f9" />
+      <path d="M14 25 L4 8 L24 18 Z" fill="#7b1fa2" />
+      <path d="M86 25 L96 8 L76 18 Z" fill="#7b1fa2" />
+      <path d="M10 40 L0 28 L14 38 Z" fill="#4a148c" />
+      <path d="M90 40 L100 28 L86 38 Z" fill="#4a148c" />
+      <path d="M28 12 L24 25 L34 20 Z" fill="#ea80fc" opacity="0.8" />
+      <path d="M72 12 L76 25 L66 20 Z" fill="#ea80fc" opacity="0.8" />
+      <ellipse cx="34" cy="42" rx="12" ry="11" fill="#f3e5f5" />
+      <ellipse cx="66" cy="42" rx="12" ry="11" fill="#f3e5f5" />
+      <ellipse cx="35" cy="44" rx="7" ry="8" fill="#d500f9" />
+      <ellipse cx="65" cy="44" rx="7" ry="8" fill="#d500f9" />
+      <ellipse cx="36" cy="45" rx="4" ry="5" fill="#4a0072" />
+      <ellipse cx="64" cy="45" rx="4" ry="5" fill="#4a0072" />
+      <circle cx="37.5" cy="43" r="1.8" fill="#fff" />
+      <circle cx="62.5" cy="43" r="1.8" fill="#fff" />
+      <path d="M18 30 L40 36" stroke="#1a0033" strokeWidth="5" strokeLinecap="round" />
+      <path d="M82 30 L60 36" stroke="#1a0033" strokeWidth="5" strokeLinecap="round" />
+      <path d="M38 65 Q50 72, 62 65" stroke="#4a148c" strokeWidth="3" fill="none" />
+      <path d="M42 65 L46 73 L50 65 Z" fill="#ea80fc" />
+      <path d="M50 65 L54 73 L58 65 Z" fill="#ea80fc" />
+      <circle cx="15" cy="20" r="5" fill="#ea80fc" opacity="0.8">
+        <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="85" cy="25" r="4" fill="#ea80fc" opacity="0.7">
+        <animate attributeName="r" values="4;6;4" dur="2.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="12" cy="70" r="3.5" fill="#f8bbd0" opacity="0.6">
+        <animate attributeName="cy" values="70;55;70" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="88" cy="68" r="3" fill="#f8bbd0" opacity="0.6">
+        <animate attributeName="cy" values="68;52;68" dur="2.8s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.8s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="35" cy="82" r="2.5" fill="#f3e5f5" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="65" cy="80" r="3" fill="#f3e5f5" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.9s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="50" cy="90" r="2" fill="#f8bbd0" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.4s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
 const enemyComponents: Record<string, React.FC<{ size?: string }>> = {
   flame_imp: FireEnemy,
   water_sprite: WaterEnemy,
@@ -667,11 +879,14 @@ const enemyComponents: Record<string, React.FC<{ size?: string }>> = {
   phoenix_lord: PhoenixLord,
   ice_queen: IceQueen,
   storm_titan: StormTitan,
+  boss_crystal_phase2: BossCrystalPhase2,
+  boss_crystal_phase3: BossCrystalPhase3,
+  boss_void_phase2: BossVoidPhase2,
+  boss_void_phase3: BossVoidPhase3,
 };
 
 export default function EnemyAvatar({ type, size = 'md', animate = true, className, tier = 'common', bossPhase }: EnemyAvatarProps) {
   const EnemyComponent = enemyComponents[type] || FireEnemy;
-  const tierStyle = tierBorderStyles[tier];
   
   return (
     <div className={cn('relative flex items-center justify-center', sizes[size as keyof typeof sizes], className)}>

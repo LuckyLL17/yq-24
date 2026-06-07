@@ -2,13 +2,13 @@ import { cn } from '@/lib/utils';
 import HealthBar from './HealthBar';
 import EnemyAvatar from './EnemyAvatar';
 import ElementIcon from './ElementIcon';
-import type { Combatant, StatusEffect, EnemyTier, BossPhase } from '@/types/game';
+import type { Combatant, EnemyTier, BossPhase, BossIntentType } from '@/types/game';
 
 interface CharacterDisplayProps {
   character: Combatant;
   isPlayer?: boolean;
   showIntent?: boolean;
-  intent?: 'attack' | 'defend' | 'buff';
+  intent?: BossIntentType;
   intentValue?: number;
   isShaking?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -33,10 +33,11 @@ const STATUS_ICONS: Record<string, { icon: string; color: string; name: string; 
   draw: { icon: '🃏', color: 'text-blue-400', name: '抽牌', glow: 'shadow-blue-500/50' },
 };
 
-const INTENT_INFO = {
+const INTENT_INFO: Record<BossIntentType, { icon: string; color: string; bg: string; border: string; glow: string }> = {
   attack: { icon: '⚔️', color: 'text-red-300', bg: 'from-red-950/90 to-red-900/90', border: 'border-red-500/60', glow: 'shadow-red-500/30' },
   defend: { icon: '🛡️', color: 'text-blue-300', bg: 'from-blue-950/90 to-blue-900/90', border: 'border-blue-500/60', glow: 'shadow-blue-500/30' },
   buff: { icon: '✨', color: 'text-purple-300', bg: 'from-purple-950/90 to-purple-900/90', border: 'border-purple-500/60', glow: 'shadow-purple-500/30' },
+  debuff: { icon: '💀', color: 'text-green-300', bg: 'from-green-950/90 to-emerald-900/90', border: 'border-green-500/60', glow: 'shadow-green-500/30' },
 };
 
 function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
@@ -45,12 +46,6 @@ function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     md: 'w-24 h-24',
     lg: 'w-32 h-32',
   };
-  
-  const iconSizes = {
-    sm: 'md',
-    md: 'lg',
-    lg: 'xl',
-  } as const;
   
   return (
     <div className={cn('relative flex items-center justify-center', sizes[size])}>

@@ -117,7 +117,6 @@ export const CARD_VARIANTS: Record<ElementType, Array<{ name: string; descriptio
 export const createCard = (element: ElementType): Card => {
   const variants = CARD_VARIANTS[element];
   const variant = variants[Math.floor(Math.random() * variants.length)];
-  const elementData = ELEMENTS[element];
   return {
     id: generateCardId(),
     element,
@@ -662,7 +661,7 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
       avatarType: 'boss_dragon_phase2',
       abilities: [
         { id: 'dragon_breath', name: '龙息', description: '喷射龙焰造成额外伤害', type: 'damage_boost', value: 12, cooldown: 2 },
-        { id: 'dragon_rage', name: '龙之怒', description: '进入狂暴状态，攻击力大幅提升', type: 'enrage', value: 15, cooldown: 3 },
+        { id: 'dragon_rage', name: '龙之怒', description: '进入狂暴状态，攻击力大幅提升', type: 'enrage', value: 10, cooldown: 3 },
         { id: 'tail_sweep', name: '横扫', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 2 },
       ],
       intentPattern: ['attack', 'attack', 'attack', 'defend', 'buff'],
@@ -674,12 +673,94 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
       attackPower: 30,
       avatarType: 'boss_dragon_phase3',
       abilities: [
-        { id: 'apocalypse_breath', name: '毁灭龙息', description: '释放毁灭性龙焰', type: 'damage_boost', value: 18, cooldown: 2 },
-        { id: 'dragon_rage', name: '狂暴之怒', description: '进入狂暴状态', type: 'enrage', value: 20, cooldown: 2 },
+        { id: 'apocalypse_breath', name: '毁灭龙息', description: '释放毁灭性龙焰', type: 'damage_boost', value: 15, cooldown: 2 },
+        { id: 'dragon_rage', name: '狂暴之怒', description: '进入狂暴状态', type: 'enrage', value: 12, cooldown: 2 },
         { id: 'tail_sweep', name: '毁灭横扫', description: '连续攻击三次', type: 'multi_attack', value: 3, cooldown: 2 },
         { id: 'dark_curse', name: '黑暗诅咒', description: '削弱玩家', type: 'weaken_player', value: 5, cooldown: 4 },
       ],
       intentPattern: ['attack', 'attack', 'buff', 'attack', 'defend', 'attack'],
+    },
+  ],
+  boss_crystal: [
+    {
+      phase: 1,
+      name: '晶岩长老',
+      maxHp: 200,
+      attackPower: 14,
+      avatarType: 'crystal_guardian',
+      abilities: [
+        { id: 'crystal_shield', name: '晶岩护盾', description: '获得大量护盾', type: 'shield_wall', value: 25, cooldown: 2 },
+        { id: 'crystal_heal', name: '晶核修复', description: '回复生命值', type: 'heal_self', value: 20, cooldown: 3 },
+      ],
+      intentPattern: ['defend', 'attack', 'defend', 'buff', 'attack'],
+    },
+    {
+      phase: 2,
+      name: '晶岩长老·共鸣',
+      maxHp: 260,
+      attackPower: 18,
+      avatarType: 'boss_crystal_phase2',
+      abilities: [
+        { id: 'crystal_shield', name: '晶岩护盾', description: '获得大量护盾', type: 'shield_wall', value: 35, cooldown: 2 },
+        { id: 'crystal_heal', name: '晶核修复', description: '回复生命值', type: 'heal_self', value: 28, cooldown: 3 },
+        { id: 'prism_armor', name: '棱镜护甲', description: '强化自身防御', type: 'enrage', value: 6, cooldown: 3 },
+      ],
+      intentPattern: ['defend', 'defend', 'attack', 'buff', 'attack', 'defend'],
+    },
+    {
+      phase: 3,
+      name: '晶岩长老·不灭',
+      maxHp: 320,
+      attackPower: 22,
+      avatarType: 'boss_crystal_phase3',
+      abilities: [
+        { id: 'diamond_shield', name: '钻石壁垒', description: '获得巨额护盾', type: 'shield_wall', value: 50, cooldown: 2 },
+        { id: 'crystal_heal', name: '晶核重组', description: '回复大量生命值', type: 'heal_self', value: 40, cooldown: 3 },
+        { id: 'prism_armor', name: '棱镜护甲', description: '大幅强化自身', type: 'enrage', value: 10, cooldown: 2 },
+        { id: 'shatter', name: '晶爆术', description: '爆发性多段伤害', type: 'multi_attack', value: 3, cooldown: 3 },
+      ],
+      intentPattern: ['defend', 'attack', 'defend', 'buff', 'attack', 'attack', 'defend'],
+    },
+  ],
+  boss_void: [
+    {
+      phase: 1,
+      name: '虚空使者',
+      maxHp: 160,
+      attackPower: 16,
+      avatarType: 'void_walker',
+      abilities: [
+        { id: 'void_drain', name: '虚空汲取', description: '攻击时回复生命', type: 'lifesteal', value: 8, cooldown: 2 },
+        { id: 'weakening_curse', name: '虚弱诅咒', description: '削弱玩家攻击力', type: 'weaken_player', value: 4, cooldown: 3 },
+      ],
+      intentPattern: ['attack', 'debuff', 'attack', 'defend'],
+    },
+    {
+      phase: 2,
+      name: '虚空使者·深渊',
+      maxHp: 200,
+      attackPower: 22,
+      avatarType: 'boss_void_phase2',
+      abilities: [
+        { id: 'void_drain', name: '虚空汲取', description: '攻击时回复生命', type: 'lifesteal', value: 12, cooldown: 2 },
+        { id: 'weakening_curse', name: '虚弱诅咒', description: '削弱玩家攻击力', type: 'weaken_player', value: 6, cooldown: 2 },
+        { id: 'shadow_strike', name: '暗影突袭', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 2 },
+      ],
+      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'defend'],
+    },
+    {
+      phase: 3,
+      name: '虚空使者·湮灭',
+      maxHp: 240,
+      attackPower: 28,
+      avatarType: 'boss_void_phase3',
+      abilities: [
+        { id: 'soul_drain', name: '灵魂抽取', description: '攻击时大量回复生命', type: 'lifesteal', value: 18, cooldown: 2 },
+        { id: 'abyss_curse', name: '深渊诅咒', description: '大幅削弱玩家', type: 'weaken_player', value: 8, cooldown: 2 },
+        { id: 'void_barrage', name: '虚空弹幕', description: '连续攻击三次', type: 'multi_attack', value: 3, cooldown: 2 },
+        { id: 'dark_regen', name: '黑暗再生', description: '回复大量生命', type: 'heal_self', value: 30, cooldown: 4 },
+      ],
+      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'buff', 'attack'],
     },
   ],
 };
@@ -878,6 +959,38 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     bossMaxPhases: 3,
     bossPhases: BOSS_PHASES.boss_dragon,
     abilities: BOSS_PHASES.boss_dragon[0].abilities,
+  },
+  {
+    name: '晶岩长老',
+    maxHp: 200,
+    attackPower: 14,
+    intent: 'defend',
+    intentValue: 25,
+    image: '💎',
+    avatarType: 'crystal_guardian',
+    level: 7,
+    tier: 'boss',
+    isBoss: true,
+    bossPhase: 1,
+    bossMaxPhases: 3,
+    bossPhases: BOSS_PHASES.boss_crystal,
+    abilities: BOSS_PHASES.boss_crystal[0].abilities,
+  },
+  {
+    name: '虚空使者',
+    maxHp: 160,
+    attackPower: 16,
+    intent: 'attack',
+    intentValue: 18,
+    image: '🌑',
+    avatarType: 'void_walker',
+    level: 8,
+    tier: 'boss',
+    isBoss: true,
+    bossPhase: 1,
+    bossMaxPhases: 3,
+    bossPhases: BOSS_PHASES.boss_void,
+    abilities: BOSS_PHASES.boss_void[0].abilities,
   },
 ];
 

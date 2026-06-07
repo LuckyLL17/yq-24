@@ -3,7 +3,7 @@ import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
 import UpgradePanel from './UpgradePanel';
-import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboLevel, getComboWithLevel } from '@/data/gameData';
+import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 
 export default function BattleScene() {

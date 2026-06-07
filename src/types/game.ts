@@ -96,7 +96,11 @@ export type AvatarType =
   | 'void_walker'
   | 'phoenix_lord'
   | 'ice_queen'
-  | 'storm_titan';
+  | 'storm_titan'
+  | 'boss_crystal_phase2'
+  | 'boss_crystal_phase3'
+  | 'boss_void_phase2'
+  | 'boss_void_phase3';
 
 export type EnemyTier = 'common' | 'elite' | 'boss';
 
@@ -111,7 +115,8 @@ export type SpecialAbilityType =
   | 'element_absorb'
   | 'counter_strike'
   | 'damage_boost'
-  | 'weaken_player';
+  | 'weaken_player'
+  | 'lifesteal';
 
 export interface SpecialAbility {
   id: string;
@@ -123,6 +128,8 @@ export interface SpecialAbility {
   currentCooldown?: number;
 }
 
+export type BossIntentType = 'attack' | 'defend' | 'buff' | 'debuff';
+
 export interface BossPhaseData {
   phase: BossPhase;
   name: string;
@@ -130,7 +137,7 @@ export interface BossPhaseData {
   attackPower: number;
   avatarType: AvatarType;
   abilities: SpecialAbility[];
-  intentPattern?: Array<'attack' | 'defend' | 'buff'>;
+  intentPattern?: BossIntentType[];
 }
 
 export interface Combatant {
@@ -155,7 +162,7 @@ export interface Player extends Combatant {
 
 export interface Enemy extends Combatant {
   attackPower: number;
-  intent: 'attack' | 'defend' | 'buff';
+  intent: BossIntentType;
   intentValue: number;
   tier: EnemyTier;
   level: number;
@@ -165,6 +172,7 @@ export interface Enemy extends Combatant {
   bossPhases?: BossPhaseData[];
   abilities?: SpecialAbility[];
   phaseTransitionTriggered?: boolean;
+  intentPatternIndex?: number;
 }
 
 export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick';
