@@ -138,11 +138,14 @@ const loadInitialState = (): GameState => {
 
   const permanentData = loadPermanentData();
   if (permanentData) {
-    baseState.elementEssence = permanentData.elementEssence;
-    baseState.player.comboLevels = permanentData.comboLevels;
-    baseState.dailyQuests = permanentData.dailyQuests;
+    baseState.elementEssence = permanentData.elementEssence ?? 0;
+    baseState.player.comboLevels = permanentData.comboLevels ?? baseState.player.comboLevels;
+    baseState.dailyQuests = permanentData.dailyQuests ?? baseState.dailyQuests;
     if (permanentData.cosmetics) {
-      baseState.cosmetics = permanentData.cosmetics;
+      baseState.cosmetics = {
+        ...initialCosmeticsState(),
+        ...permanentData.cosmetics,
+      };
     }
   }
 
@@ -1751,27 +1754,27 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   isCardBorderOwned: (borderId: string): boolean => {
-    return get().cosmetics.ownedCardBorders.includes(borderId);
+    return get().cosmetics?.ownedCardBorders?.includes(borderId) ?? false;
   },
 
   isAvatarOwned: (avatarId: string): boolean => {
-    return get().cosmetics.ownedAvatars.includes(avatarId);
+    return get().cosmetics?.ownedAvatars?.includes(avatarId) ?? false;
   },
 
   getEquippedCardBorder: (): string | null => {
-    return get().cosmetics.equippedCardBorder;
+    return get().cosmetics?.equippedCardBorder ?? null;
   },
 
   getEquippedAvatar: (): string | null => {
-    return get().cosmetics.equippedAvatar;
+    return get().cosmetics?.equippedAvatar ?? null;
   },
 
   getCollection: () => {
-    return get().cosmetics.collection;
+    return get().cosmetics?.collection || [];
   },
 
   getCollectionStats: () => {
-    const collection = get().cosmetics.collection;
+    const collection = get().cosmetics?.collection || [];
     const total = collection.reduce((sum, c) => sum + c.count, 0);
     const byRarity: Record<string, number> = {
       common: 0,
@@ -1786,13 +1789,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   getEquippedCardBorderData: () => {
-    const borderId = get().cosmetics.equippedCardBorder;
+    const borderId = get().cosmetics?.equippedCardBorder;
     if (!borderId) return null;
     return CARD_BORDERS.find((b) => b.id === borderId) || null;
   },
 
   getEquippedAvatarData: () => {
-    const avatarId = get().cosmetics.equippedAvatar;
+    const avatarId = get().cosmetics?.equippedAvatar;
     if (!avatarId) return null;
     return SHOP_AVATARS.find((a) => a.id === avatarId) || null;
   },
