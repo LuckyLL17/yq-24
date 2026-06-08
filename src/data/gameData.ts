@@ -1,4 +1,4 @@
-import type { Card, ComboSkill, Enemy, ElementType, Player, Difficulty } from '@/types/game';
+import type { Card, ComboSkill, Enemy, ElementType, Player, Difficulty, Rarity } from '@/types/game';
 
 export const ELEMENTS: Record<ElementType, { 
   name: string; 
@@ -1551,4 +1551,25 @@ export const SHOP_CATEGORY_ICONS: Record<string, string> = {
   card_pack: '📦',
   card_border: '🖼️',
   avatar: '👤',
+};
+
+export const DISASSEMBLE_ESSENCE: Record<Rarity, number> = {
+  common: 5,
+  rare: 15,
+  epic: 50,
+  legendary: 150,
+};
+
+export const SYNTHESIZE_ESSENCE: Record<Rarity, number> = {
+  common: 20,
+  rare: 60,
+  epic: 200,
+  legendary: 600,
+};
+
+export const RARITY_NAMES: Record<Rarity, string> = {
+  common: '普通',
+  rare: '稀有',
+  epic: '史诗',
+  legendary: '传说',
 };

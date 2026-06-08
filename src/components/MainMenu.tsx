@@ -6,7 +6,7 @@ import type { GameMode, Difficulty } from '@/types/game';
 import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial, toggleMyCards, getCollectionStats } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
@@ -333,6 +333,16 @@ export default function MainMenu() {
                 <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>商店</span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1">
                   💎 {elementEssence}
+                </span>
+              </button>
+              <button
+                onClick={toggleMyCards}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 hover:from-emerald-500/50 hover:to-cyan-500/50 text-white/80 hover:text-white transition-all duration-300 border border-emerald-500/30 hover:border-emerald-400/50 flex items-center gap-2 relative"
+              >
+                <span>🃏</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>我的卡牌</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 text-xs font-bold">
+                  {getCollectionStats().unique} 种
                 </span>
               </button>
               <button

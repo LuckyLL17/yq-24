@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS } from '@/data/gameData';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity } from '@/types/game';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
 interface GameActions {
@@ -80,6 +80,13 @@ interface GameActions {
   skipTutorial: () => void;
   completeTutorial: () => void;
   isTutorialCompleted: () => boolean;
+  toggleMyCards: () => void;
+  disassembleCard: (cardId: string, count?: number) => number | null;
+  disassembleAllDuplicates: () => number;
+  synthesizeCard: (element: ElementType, cardName: string) => CollectedCard | null;
+  getSynthesizeCost: (rarity: Rarity) => number;
+  getDisassembleValue: (rarity: Rarity) => number;
+  getAllCardTemplates: () => Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity }>;
 }
 
 const initialPlayerState = (): Player => {
@@ -140,6 +147,7 @@ const loadInitialState = (): GameState => {
     dailyQuests: initialDailyQuestState(),
     showDailyQuests: false,
     showShop: false,
+    showMyCards: false,
     cosmetics: initialCosmeticsState(),
     tutorial: {
       tutorialCompleted: false,
@@ -1897,5 +1905,171 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   isTutorialCompleted: (): boolean => {
     return get().tutorial.tutorialCompleted;
+  },
+
+  toggleMyCards: () => {
+    set((state) => ({ showMyCards: !state.showMyCards }));
+  },
+
+  getDisassembleValue: (rarity: Rarity): number => {
+    return DISASSEMBLE_ESSENCE[rarity] || 0;
+  },
+
+  getSynthesizeCost: (rarity: Rarity): number => {
+    return SYNTHESIZE_ESSENCE[rarity] || 0;
+  },
+
+  disassembleCard: (cardId: string, count: number = 1): number | null => {
+    const state = get();
+    const collection = state.cosmetics.collection;
+    const cardIndex = collection.findIndex((c) => c.id === cardId);
+
+    if (cardIndex < 0) return null;
+
+    const card = collection[cardIndex];
+    const actualCount = Math.min(count, card.count - 1);
+
+    if (actualCount <= 0) return null;
+
+    const essenceGain = DISASSEMBLE_ESSENCE[card.rarity] * actualCount;
+
+    set((s) => {
+      const newCollection = [...s.cosmetics.collection];
+      const idx = newCollection.findIndex((c) => c.id === cardId);
+      if (idx >= 0) {
+        newCollection[idx] = {
+          ...newCollection[idx],
+          count: newCollection[idx].count - actualCount,
+        };
+      }
+      return {
+        elementEssence: s.elementEssence + essenceGain,
+        cosmetics: {
+          ...s.cosmetics,
+          collection: newCollection,
+        },
+      };
+    });
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+
+    return essenceGain;
+  },
+
+  disassembleAllDuplicates: (): number => {
+    const state = get();
+    const collection = state.cosmetics.collection;
+    let totalEssence = 0;
+
+    set((s) => {
+      const newCollection = s.cosmetics.collection.map((card) => {
+        if (card.count > 1) {
+          const extraCount = card.count - 1;
+          totalEssence += DISASSEMBLE_ESSENCE[card.rarity] * extraCount;
+          return { ...card, count: 1 };
+        }
+        return card;
+      });
+
+      return {
+        elementEssence: s.elementEssence + totalEssence,
+        cosmetics: {
+          ...s.cosmetics,
+          collection: newCollection,
+        },
+      };
+    });
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+
+    return totalEssence;
+  },
+
+  synthesizeCard: (element: ElementType, cardName: string): CollectedCard | null => {
+    const state = get();
+    const variants = CARD_VARIANTS[element];
+    const cardTemplate = variants.find((v) => v.name === cardName);
+
+    if (!cardTemplate) return null;
+
+    const cost = SYNTHESIZE_ESSENCE[cardTemplate.rarity];
+    if (state.elementEssence < cost) return null;
+
+    const collectionKey = `${element}_${cardName}`;
+    const existingIndex = state.cosmetics.collection.findIndex((c) => c.id === collectionKey);
+
+    let newCard: CollectedCard;
+
+    set((s) => {
+      const newCollection = [...s.cosmetics.collection];
+      const idx = newCollection.findIndex((c) => c.id === collectionKey);
+
+      if (idx >= 0) {
+        newCollection[idx] = {
+          ...newCollection[idx],
+          count: newCollection[idx].count + 1,
+        };
+        newCard = newCollection[idx];
+      } else {
+        newCard = {
+          id: collectionKey,
+          element,
+          name: cardName,
+          description: cardTemplate.description,
+          power: cardTemplate.power,
+          rarity: cardTemplate.rarity,
+          count: 1,
+          obtainedAt: Date.now(),
+        };
+        newCollection.push(newCard);
+      }
+
+      return {
+        elementEssence: s.elementEssence - cost,
+        cosmetics: {
+          ...s.cosmetics,
+          collection: newCollection,
+        },
+      };
+    });
+
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+
+    return newCard!;
+  },
+
+  getAllCardTemplates: () => {
+    const templates: Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity }> = [];
+    const elements: ElementType[] = ['fire', 'water', 'earth', 'wind', 'lightning', 'light', 'dark'];
+    elements.forEach((element) => {
+      CARD_VARIANTS[element].forEach((variant) => {
+        templates.push({
+          element,
+          name: variant.name,
+          description: variant.description,
+          power: variant.power,
+          rarity: variant.rarity,
+        });
+      });
+    });
+    return templates;
   },
 }));

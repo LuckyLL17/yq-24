@@ -318,6 +318,7 @@ export interface GameState {
   dailyQuests: DailyQuestState;
   showDailyQuests: boolean;
   showShop: boolean;
+  showMyCards: boolean;
   cosmetics: PlayerCosmetics;
   tutorial: TutorialState;
 }

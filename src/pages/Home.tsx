@@ -5,10 +5,11 @@ import GameOverScreen from '@/components/GameOverScreen';
 import LevelCompleteModal from '@/components/LevelCompleteModal';
 import DailyQuests from '@/components/DailyQuests';
 import Shop from '@/components/Shop';
+import MyCards from '@/components/MyCards';
 import { useEffect } from 'react';
 
 export default function Home() {
-  const { phase, showLevelComplete, showShop, checkDailyRefresh, saveGame } = useGameStore();
+  const { phase, showLevelComplete, showShop, showMyCards, checkDailyRefresh, saveGame } = useGameStore();
 
   useEffect(() => {
     checkDailyRefresh();
@@ -38,6 +39,7 @@ export default function Home() {
 
       <DailyQuests />
       {showShop && <Shop />}
+      {showMyCards && <MyCards />}
     </div>
   );
 }
