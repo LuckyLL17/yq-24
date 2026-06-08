@@ -59,6 +59,9 @@ export default {
         'rain': 'rain 3s linear infinite',
         'spin-slow': 'spinSlow 8s linear infinite',
         'lightning-flash': 'lightningFlash 1.5s ease-in-out infinite',
+        'card-flip': 'cardFlip 0.6s ease-in-out',
+        'sparkle': 'sparkle 2s ease-in-out infinite',
+        'card-float': 'cardFloat 3s ease-in-out infinite',
       },
       boxShadow: {
         'card': '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',

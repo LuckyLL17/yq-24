@@ -81,6 +81,7 @@ interface GameActions {
   completeTutorial: () => void;
   isTutorialCompleted: () => boolean;
   toggleMyCards: () => void;
+  toggleCollection: () => void;
   disassembleCard: (cardId: string, count?: number) => number | null;
   disassembleAllDuplicates: () => number;
   synthesizeCard: (element: ElementType, cardName: string) => CollectedCard | null;
@@ -174,6 +175,7 @@ const loadInitialState = (): GameState => {
     showDailyQuests: false,
     showShop: false,
     showMyCards: false,
+    showCollection: false,
     cosmetics: initialCosmeticsState(),
     tutorial: {
       tutorialCompleted: false,
@@ -2330,6 +2332,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   toggleMyCards: () => {
     set((state) => ({ showMyCards: !state.showMyCards }));
+  },
+
+  toggleCollection: () => {
+    set((state) => ({ showCollection: !state.showCollection }));
   },
 
   getDisassembleValue: (rarity: Rarity): number => {

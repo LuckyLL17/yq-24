@@ -354,6 +354,7 @@ export interface GameState {
   showDailyQuests: boolean;
   showShop: boolean;
   showMyCards: boolean;
+  showCollection: boolean;
   cosmetics: PlayerCosmetics;
   tutorial: TutorialState;
   myCardUsedIds: string[];
