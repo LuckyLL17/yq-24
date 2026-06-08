@@ -1645,16 +1645,16 @@ export const SHOP_CATEGORY_ICONS: Record<string, string> = {
 
 export const DISASSEMBLE_ESSENCE: Record<Rarity, number> = {
   common: 5,
-  rare: 15,
-  epic: 50,
-  legendary: 150,
+  rare: 20,
+  epic: 100,
+  legendary: 500,
 };
 
 export const SYNTHESIZE_ESSENCE: Record<Rarity, number> = {
   common: 20,
-  rare: 60,
-  epic: 200,
-  legendary: 600,
+  rare: 80,
+  epic: 400,
+  legendary: 2000,
 };
 
 export const RARITY_NAMES: Record<Rarity, string> = {
