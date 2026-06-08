@@ -127,7 +127,17 @@ export type SpecialAbilityType =
   | 'counter_strike'
   | 'damage_boost'
   | 'weaken_player'
-  | 'lifesteal';
+  | 'lifesteal'
+  | 'poison_attack'
+  | 'burn_attack'
+  | 'freeze_attack'
+  | 'stun_attack'
+  | 'thorns_aura'
+  | 'regen'
+  | 'shield_bash'
+  | 'drain_shield'
+  | 'pierce_attack'
+  | 'rage_mode';
 
 export interface SpecialAbility {
   id: string;
@@ -139,7 +149,7 @@ export interface SpecialAbility {
   currentCooldown?: number;
 }
 
-export type BossIntentType = 'attack' | 'defend' | 'buff' | 'debuff';
+export type BossIntentType = 'attack' | 'defend' | 'buff' | 'debuff' | 'heal';
 
 export interface BossPhaseData {
   phase: BossPhase;

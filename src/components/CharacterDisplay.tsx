@@ -39,6 +39,7 @@ const INTENT_INFO: Record<BossIntentType, { icon: string; color: string; bg: str
   defend: { icon: '🛡️', color: 'text-blue-300', bg: 'from-blue-950/90 to-blue-900/90', border: 'border-blue-500/60', glow: 'shadow-blue-500/30' },
   buff: { icon: '✨', color: 'text-purple-300', bg: 'from-purple-950/90 to-purple-900/90', border: 'border-purple-500/60', glow: 'shadow-purple-500/30' },
   debuff: { icon: '💀', color: 'text-green-300', bg: 'from-green-950/90 to-emerald-900/90', border: 'border-green-500/60', glow: 'shadow-green-500/30' },
+  heal: { icon: '💚', color: 'text-emerald-300', bg: 'from-emerald-950/90 to-green-900/90', border: 'border-emerald-500/60', glow: 'shadow-emerald-500/30' },
 };
 
 function PlayerAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {

@@ -712,8 +712,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
       abilities: [
         { id: 'dragon_breath', name: '龙息', description: '喷射龙焰造成额外伤害', type: 'damage_boost', value: 8, cooldown: 2 },
         { id: 'dragon_shield', name: '龙鳞护盾', description: '召唤龙鳞护盾保护自己', type: 'shield_wall', value: 20, cooldown: 3 },
+        { id: 'dragon_heal', name: '龙血恢复', description: '回复少量生命值', type: 'heal_self', value: 15, cooldown: 4 },
       ],
-      intentPattern: ['attack', 'attack', 'defend', 'buff'],
+      intentPattern: ['attack', 'attack', 'defend', 'buff', 'attack'],
     },
     {
       phase: 2,
@@ -725,8 +726,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'dragon_breath', name: '龙息', description: '喷射龙焰造成额外伤害', type: 'damage_boost', value: 12, cooldown: 2 },
         { id: 'dragon_rage', name: '龙之怒', description: '进入狂暴状态，攻击力大幅提升', type: 'enrage', value: 10, cooldown: 3 },
         { id: 'tail_sweep', name: '横扫', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 2 },
+        { id: 'dragon_fire', name: '龙焰灼烧', description: '攻击附带灼烧效果', type: 'burn_attack', value: 6, cooldown: 3 },
       ],
-      intentPattern: ['attack', 'attack', 'attack', 'defend', 'buff'],
+      intentPattern: ['attack', 'attack', 'attack', 'defend', 'buff', 'debuff'],
     },
     {
       phase: 3,
@@ -739,8 +741,10 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'dragon_rage', name: '狂暴之怒', description: '进入狂暴状态', type: 'enrage', value: 12, cooldown: 2 },
         { id: 'tail_sweep', name: '毁灭横扫', description: '连续攻击三次', type: 'multi_attack', value: 3, cooldown: 2 },
         { id: 'dark_curse', name: '黑暗诅咒', description: '削弱玩家', type: 'weaken_player', value: 5, cooldown: 4 },
+        { id: 'dragon_regen', name: '龙血再生', description: '回复大量生命', type: 'heal_self', value: 25, cooldown: 4 },
+        { id: 'inferno', name: '地狱烈焰', description: '强力灼烧', type: 'burn_attack', value: 10, cooldown: 3 },
       ],
-      intentPattern: ['attack', 'attack', 'buff', 'attack', 'defend', 'attack'],
+      intentPattern: ['attack', 'attack', 'buff', 'attack', 'defend', 'attack', 'heal', 'debuff'],
     },
   ],
   boss_crystal: [
@@ -753,8 +757,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
       abilities: [
         { id: 'crystal_shield', name: '晶岩护盾', description: '获得大量护盾', type: 'shield_wall', value: 25, cooldown: 2 },
         { id: 'crystal_heal', name: '晶核修复', description: '回复生命值', type: 'heal_self', value: 20, cooldown: 3 },
+        { id: 'crystal_thorns', name: '晶刺护体', description: '获得反伤效果', type: 'thorns_aura', value: 6, cooldown: 4 },
       ],
-      intentPattern: ['defend', 'attack', 'defend', 'buff', 'attack'],
+      intentPattern: ['defend', 'attack', 'defend', 'heal', 'attack'],
     },
     {
       phase: 2,
@@ -766,8 +771,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'crystal_shield', name: '晶岩护盾', description: '获得大量护盾', type: 'shield_wall', value: 35, cooldown: 2 },
         { id: 'crystal_heal', name: '晶核修复', description: '回复生命值', type: 'heal_self', value: 28, cooldown: 3 },
         { id: 'prism_armor', name: '棱镜护甲', description: '强化自身防御', type: 'enrage', value: 6, cooldown: 3 },
+        { id: 'shield_smash', name: '盾击', description: '消耗护盾造成额外伤害', type: 'shield_bash', value: 0, cooldown: 3 },
       ],
-      intentPattern: ['defend', 'defend', 'attack', 'buff', 'attack', 'defend'],
+      intentPattern: ['defend', 'defend', 'attack', 'buff', 'attack', 'heal'],
     },
     {
       phase: 3,
@@ -780,8 +786,10 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'crystal_heal', name: '晶核重组', description: '回复大量生命值', type: 'heal_self', value: 40, cooldown: 3 },
         { id: 'prism_armor', name: '棱镜护甲', description: '大幅强化自身', type: 'enrage', value: 10, cooldown: 2 },
         { id: 'shatter', name: '晶爆术', description: '爆发性多段伤害', type: 'multi_attack', value: 3, cooldown: 3 },
+        { id: 'diamond_thorns', name: '钻石反伤', description: '强力反伤效果', type: 'thorns_aura', value: 10, cooldown: 4 },
+        { id: 'shield_barrier', name: '吸能护盾', description: '吸取玩家护盾', type: 'drain_shield', value: 20, cooldown: 4 },
       ],
-      intentPattern: ['defend', 'attack', 'defend', 'buff', 'attack', 'attack', 'defend'],
+      intentPattern: ['defend', 'attack', 'defend', 'heal', 'attack', 'attack', 'defend', 'buff'],
     },
   ],
   boss_void: [
@@ -794,8 +802,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
       abilities: [
         { id: 'void_drain', name: '虚空汲取', description: '攻击时回复生命', type: 'lifesteal', value: 8, cooldown: 2 },
         { id: 'weakening_curse', name: '虚弱诅咒', description: '削弱玩家攻击力', type: 'weaken_player', value: 4, cooldown: 3 },
+        { id: 'void_poison', name: '虚空之毒', description: '使玩家中毒', type: 'poison_attack', value: 5, cooldown: 3 },
       ],
-      intentPattern: ['attack', 'debuff', 'attack', 'defend'],
+      intentPattern: ['attack', 'debuff', 'attack', 'heal', 'debuff'],
     },
     {
       phase: 2,
@@ -807,8 +816,9 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'void_drain', name: '虚空汲取', description: '攻击时回复生命', type: 'lifesteal', value: 12, cooldown: 2 },
         { id: 'weakening_curse', name: '虚弱诅咒', description: '削弱玩家攻击力', type: 'weaken_player', value: 6, cooldown: 2 },
         { id: 'shadow_strike', name: '暗影突袭', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 2 },
+        { id: 'abyss_poison', name: '深渊之毒', description: '强力毒素', type: 'poison_attack', value: 8, cooldown: 3 },
       ],
-      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'defend'],
+      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'heal', 'debuff'],
     },
     {
       phase: 3,
@@ -821,8 +831,10 @@ export const BOSS_PHASES: Record<string, import('@/types/game').BossPhaseData[]>
         { id: 'abyss_curse', name: '深渊诅咒', description: '大幅削弱玩家', type: 'weaken_player', value: 8, cooldown: 2 },
         { id: 'void_barrage', name: '虚空弹幕', description: '连续攻击三次', type: 'multi_attack', value: 3, cooldown: 2 },
         { id: 'dark_regen', name: '黑暗再生', description: '回复大量生命', type: 'heal_self', value: 30, cooldown: 4 },
+        { id: 'void_burn', name: '虚空灼烧', description: '使玩家灼烧', type: 'burn_attack', value: 8, cooldown: 3 },
+        { id: 'void_freeze', name: '虚空冻结', description: '有几率冻结玩家', type: 'freeze_attack', value: 1, cooldown: 4 },
       ],
-      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'buff', 'attack'],
+      intentPattern: ['attack', 'attack', 'debuff', 'attack', 'heal', 'attack', 'debuff'],
     },
   ],
 };
@@ -838,6 +850,9 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     avatarType: 'flame_imp',
     level: 1,
     tier: 'common',
+    abilities: [
+      { id: 'flame_burn', name: '烈焰灼烧', description: '攻击附带灼烧效果', type: 'burn_attack', value: 3, cooldown: 2 },
+    ],
   },
   {
     name: '水晶精灵',
@@ -849,6 +864,9 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     avatarType: 'water_sprite',
     level: 2,
     tier: 'common',
+    abilities: [
+      { id: 'water_heal', name: '水之治愈', description: '回复少量生命', type: 'heal_self', value: 8, cooldown: 3 },
+    ],
   },
   {
     name: '风之精灵',
@@ -898,6 +916,7 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     tier: 'elite',
     abilities: [
       { id: 'crystal_shield', name: '水晶护盾', description: '获得大量护盾', type: 'shield_wall', value: 25, cooldown: 3 },
+      { id: 'crystal_thorns', name: '晶刺', description: '获得反伤效果', type: 'thorns_aura', value: 5, cooldown: 4 },
     ],
   },
   {
@@ -910,6 +929,9 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     avatarType: 'water_elemental',
     level: 3,
     tier: 'common',
+    abilities: [
+      { id: 'frost_bite', name: '寒霜之咬', description: '攻击有几率冰冻敌人', type: 'freeze_attack', value: 1, cooldown: 3 },
+    ],
   },
   {
     name: '雷霆领主',
@@ -940,7 +962,7 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     name: '虚空行者',
     maxHp: 95,
     attackPower: 13,
-    intent: 'buff',
+    intent: 'debuff',
     intentValue: 10,
     image: '🌑',
     avatarType: 'void_walker',
@@ -948,6 +970,8 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     tier: 'elite',
     abilities: [
       { id: 'void_drain', name: '虚空汲取', description: '回复生命值', type: 'heal_self', value: 15, cooldown: 3 },
+      { id: 'void_poison', name: '虚空之毒', description: '使玩家中毒', type: 'poison_attack', value: 5, cooldown: 2 },
+      { id: 'weaken_curse', name: '虚弱诅咒', description: '削弱玩家攻击力', type: 'weaken_player', value: 3, cooldown: 3 },
     ],
   },
   {
@@ -989,6 +1013,8 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     abilities: [
       { id: 'frozen_armor', name: '冰霜护甲', description: '获得护盾', type: 'shield_wall', value: 30, cooldown: 3 },
       { id: 'chilling_touch', name: '寒冰之触', description: '削弱玩家', type: 'weaken_player', value: 3, cooldown: 3 },
+      { id: 'frost_breath', name: '霜息', description: '有几率冻结玩家', type: 'freeze_attack', value: 1, cooldown: 4 },
+      { id: 'ice_regen', name: '冰晶治愈', description: '回复生命', type: 'heal_self', value: 18, cooldown: 4 },
     ],
   },
   {
@@ -1004,6 +1030,8 @@ export const ENEMIES: Array<Omit<Enemy, 'hp' | 'shield' | 'statusEffects' | 'tie
     abilities: [
       { id: 'thunder_strike', name: '雷霆一击', description: '造成大量额外伤害', type: 'damage_boost', value: 12, cooldown: 2 },
       { id: 'storm_shield', name: '风暴护盾', description: '获得护盾', type: 'shield_wall', value: 20, cooldown: 3 },
+      { id: 'lightning_stun', name: '雷击眩晕', description: '有几率眩晕玩家', type: 'stun_attack', value: 1, cooldown: 4 },
+      { id: 'thunder_chain', name: '连锁闪电', description: '连续攻击两次', type: 'multi_attack', value: 2, cooldown: 3 },
     ],
   },
   {

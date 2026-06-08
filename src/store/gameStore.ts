@@ -699,13 +699,15 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const intent = enemy.intent;
       let matchingAbilities = availableAbilities.filter(a => {
         if (intent === 'attack') {
-          return ['damage_boost', 'multi_attack', 'lifesteal'].includes(a.type);
+          return ['damage_boost', 'multi_attack', 'lifesteal', 'poison_attack', 'burn_attack', 'pierce_attack', 'rage_mode'].includes(a.type);
         } else if (intent === 'debuff') {
-          return ['weaken_player', 'lifesteal'].includes(a.type);
+          return ['weaken_player', 'poison_attack', 'burn_attack', 'freeze_attack', 'stun_attack', 'drain_shield'].includes(a.type);
         } else if (intent === 'defend') {
-          return ['shield_wall', 'counter_strike', 'thorns'].includes(a.type);
+          return ['shield_wall', 'counter_strike', 'thorns_aura', 'regen', 'shield_bash'].includes(a.type);
+        } else if (intent === 'heal') {
+          return ['heal_self', 'regen', 'lifesteal'].includes(a.type);
         } else {
-          return ['enrage', 'heal_self', 'element_absorb', 'buff_self'].includes(a.type);
+          return ['enrage', 'heal_self', 'element_absorb', 'thorns_aura', 'rage_mode'].includes(a.type);
         }
       });
       
@@ -713,7 +715,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         matchingAbilities = availableAbilities;
       }
 
-      const useChance = enemy.isBoss ? 0.8 : 0.4;
+      const useChance = enemy.isBoss ? 0.85 : 0.5;
       if (matchingAbilities.length > 0 && Math.random() < useChance) {
         usedAbility = matchingAbilities[Math.floor(Math.random() * matchingAbilities.length)];
         
@@ -729,8 +731,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             get().addFloatingText('shield', usedAbility.value, 'enemy');
             break;
           case 'heal_self': {
-            const healAmount = Math.min(usedAbility.value, enemy.maxHp - enemy.hp);
-            newEnemyHp = Math.min(enemy.maxHp, enemy.hp + usedAbility.value);
+            const healAmount = Math.min(usedAbility.value, enemy.maxHp - newEnemyHp);
+            newEnemyHp = Math.min(enemy.maxHp, newEnemyHp + usedAbility.value);
             get().addFloatingText('heal', healAmount, 'enemy');
             break;
           }
@@ -766,6 +768,120 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           case 'lifesteal':
             lifestealAmount = usedAbility.value;
             break;
+          case 'poison_attack': {
+            const existingPoison = newPlayerStatusEffects.find(e => e.type === 'poison');
+            if (existingPoison) {
+              existingPoison.value += usedAbility.value;
+              existingPoison.duration = Math.max(existingPoison.duration, 3);
+            } else {
+              newPlayerStatusEffects.push({
+                type: 'poison',
+                value: usedAbility.value,
+                duration: 3,
+              });
+            }
+            break;
+          }
+          case 'burn_attack': {
+            const existingBurn = newPlayerStatusEffects.find(e => e.type === 'burn');
+            if (existingBurn) {
+              existingBurn.value += usedAbility.value;
+              existingBurn.duration = Math.max(existingBurn.duration, 2);
+            } else {
+              newPlayerStatusEffects.push({
+                type: 'burn',
+                value: usedAbility.value,
+                duration: 2,
+              });
+            }
+            break;
+          }
+          case 'freeze_attack': {
+            const existingFreeze = newPlayerStatusEffects.find(e => e.type === 'freeze');
+            if (existingFreeze) {
+              existingFreeze.duration = Math.max(existingFreeze.duration, 1);
+            } else {
+              newPlayerStatusEffects.push({
+                type: 'freeze',
+                value: 1,
+                duration: 1,
+              });
+            }
+            break;
+          }
+          case 'stun_attack': {
+            const existingStun = newPlayerStatusEffects.find(e => e.type === 'stun');
+            if (existingStun) {
+              existingStun.duration = Math.max(existingStun.duration, 1);
+            } else {
+              newPlayerStatusEffects.push({
+                type: 'stun',
+                value: 1,
+                duration: 1,
+              });
+            }
+            break;
+          }
+          case 'thorns_aura': {
+            const existingThorns = newEnemyStatusEffects.find(e => e.type === 'thorns');
+            if (existingThorns) {
+              existingThorns.value += usedAbility.value;
+              existingThorns.duration = Math.max(existingThorns.duration, 3);
+            } else {
+              newEnemyStatusEffects.push({
+                type: 'thorns',
+                value: usedAbility.value,
+                duration: 3,
+              });
+            }
+            break;
+          }
+          case 'regen': {
+            const existingHeal = newEnemyStatusEffects.find(e => e.type === 'heal');
+            if (existingHeal) {
+              existingHeal.value += usedAbility.value;
+              existingHeal.duration = Math.max(existingHeal.duration, 3);
+            } else {
+              newEnemyStatusEffects.push({
+                type: 'heal',
+                value: usedAbility.value,
+                duration: 3,
+              });
+            }
+            break;
+          }
+          case 'shield_bash':
+            baseDamage += enemy.shield * 0.3;
+            newEnemyShield = Math.max(0, newEnemyShield - Math.floor(enemy.shield * 0.3));
+            break;
+          case 'drain_shield': {
+            const drainAmount = Math.min(player.shield, usedAbility.value);
+            newEnemyShield += drainAmount;
+            if (drainAmount > 0) {
+              get().addFloatingText('shield', drainAmount, 'enemy');
+            }
+            break;
+          }
+          case 'pierce_attack':
+            baseDamage += usedAbility.value;
+            break;
+          case 'rage_mode': {
+            const existingStrength = newEnemyStatusEffects.find(e => e.type === 'strength');
+            const rageDuration = usedAbility.cooldown + 2;
+            const rageValue = Math.floor(usedAbility.value * 1.5);
+            if (existingStrength) {
+              existingStrength.value += rageValue;
+              existingStrength.duration = Math.max(existingStrength.duration, rageDuration);
+            } else {
+              newEnemyStatusEffects.push({
+                type: 'strength',
+                value: rageValue,
+                duration: rageDuration,
+              });
+            }
+            newEnemyHp = Math.max(1, newEnemyHp - Math.floor(enemy.maxHp * 0.05));
+            break;
+          }
           default:
             break;
         }
@@ -817,6 +933,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           value: Math.floor(buffValue * 0.5),
           duration: 3,
         });
+      }
+    } else if (enemy.intent === 'heal') {
+      const healAmount = Math.min(enemy.intentValue, enemy.maxHp - newEnemyHp);
+      newEnemyHp = Math.min(enemy.maxHp, newEnemyHp + enemy.intentValue);
+      if (healAmount > 0) {
+        get().addFloatingText('heal', healAmount, 'enemy');
       }
     }
 
@@ -1551,30 +1673,101 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         }
       }
 
+      const enemy = state.enemy;
+      const player = state.player;
+      const hpPercent = enemy.hp / enemy.maxHp;
+      const playerShield = player.shield;
+      const playerHpPercent = player.hp / player.maxHp;
+      const hasStrength = enemy.statusEffects.some(e => e.type === 'strength' && e.duration > 0);
+      const hasWeakness = player.statusEffects.some(e => e.type === 'weakness' && e.duration > 0);
+      const hasHealAbility = enemy.abilities?.some(a => a.type === 'heal_self' && (a.currentCooldown ?? 0) <= 0) ?? false;
+      const hasShieldAbility = enemy.abilities?.some(a => a.type === 'shield_wall' && (a.currentCooldown ?? 0) <= 0) ?? false;
+
       if (pattern && pattern.length > 0) {
         selectedIntent = pattern[newPatternIndex % pattern.length];
         newPatternIndex = (newPatternIndex + 1) % pattern.length;
+
+        if (hpPercent < 0.3 && hasHealAbility && Math.random() < 0.7) {
+          selectedIntent = 'heal';
+        } else if (hpPercent < 0.5 && hasShieldAbility && Math.random() < 0.5) {
+          selectedIntent = 'defend';
+        }
       } else {
-        const intents: BossIntentType[] = ['attack', 'defend', 'buff'];
-        const weights = state.enemy.isBoss ? [0.5, 0.3, 0.2] : [0.6, 0.25, 0.15];
-        const rand = Math.random();
+        const weights: Record<BossIntentType, number> = {
+          attack: 0.4,
+          defend: 0.2,
+          buff: 0.15,
+          debuff: 0.15,
+          heal: 0.1,
+        };
+
+        if (hpPercent < 0.3) {
+          weights.heal = 0.35;
+          weights.defend = 0.25;
+          weights.attack = 0.25;
+          weights.buff = 0.05;
+          weights.debuff = 0.1;
+        } else if (hpPercent < 0.6) {
+          weights.heal = 0.15;
+          weights.defend = 0.25;
+          weights.attack = 0.35;
+          weights.buff = 0.1;
+          weights.debuff = 0.15;
+        }
+
+        if (playerShield > player.maxHp * 0.3) {
+          weights.debuff = 0.25;
+          weights.attack = 0.3;
+        }
+
+        if (playerHpPercent < 0.3) {
+          weights.attack = 0.5;
+          weights.buff = 0.1;
+        }
+
+        if (hasStrength) {
+          weights.buff = 0.05;
+          weights.attack = weights.attack + 0.1;
+        }
+
+        if (hasWeakness) {
+          weights.debuff = 0.05;
+          weights.attack = weights.attack + 0.1;
+        }
+
+        if (enemy.shield > enemy.maxHp * 0.3) {
+          weights.defend = 0.1;
+          weights.attack = weights.attack + 0.1;
+        }
+
+        if (!hasHealAbility) {
+          weights.heal = 0;
+        }
+        if (!hasShieldAbility && enemy.shield === 0) {
+          weights.defend = Math.max(0.05, weights.defend * 0.5);
+        }
+
+        const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+        const rand = Math.random() * totalWeight;
         let cumulative = 0;
 
-        for (let i = 0; i < intents.length; i++) {
-          cumulative += weights[i];
+        for (const [intent, weight] of Object.entries(weights) as [BossIntentType, number][]) {
+          cumulative += weight;
           if (rand <= cumulative) {
-            selectedIntent = intents[i];
+            selectedIntent = intent;
             break;
           }
         }
       }
 
       if (selectedIntent === 'defend') {
-        intentValue = Math.floor(state.enemy.attackPower * 1.2);
+        intentValue = Math.floor(enemy.attackPower * 1.3);
       } else if (selectedIntent === 'buff') {
-        intentValue = Math.floor(state.enemy.attackPower * 0.8);
+        intentValue = Math.floor(enemy.attackPower * 0.9);
       } else if (selectedIntent === 'debuff') {
-        intentValue = Math.floor(state.enemy.attackPower * 0.6);
+        intentValue = Math.floor(enemy.attackPower * 0.7);
+      } else if (selectedIntent === 'heal') {
+        intentValue = Math.floor(enemy.attackPower * 1.5);
       }
 
       return {
