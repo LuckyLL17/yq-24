@@ -142,8 +142,9 @@ export default function ComboEffect({ combo, show, level = 1, cooldown }: ComboE
                 {categoryName}
               </span>
               {level > 1 && (
-                <span className="inline-block px-3 py-1 rounded-full text-sm font-bold bg-amber-500/80 text-white">
-                  Lv.{level}
+                <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/50 level-badge text-amber-100 border border-amber-300/50">
+                  <span className="text-lg">⭐</span>
+                  <span>Lv.{level}</span>
                 </span>
               )}
             </div>

@@ -105,6 +105,13 @@ interface GameActions {
   duoGetComboCooldown: (playerNum: 1 | 2, comboId: string) => number;
   duoGetCurrentComboLevel: (playerNum: 1 | 2, comboId: string) => number;
   setDuoLayout: (layout: DuoScreenLayout) => void;
+  getStreakDamageBonus: () => number;
+  calculateDamageTier: (damage: number) => import('@/types/game').DamageTier;
+  calculateBattleRating: () => import('@/types/game').BattleRating;
+  addDamageFloatingText: (damage: number, target: 'player' | 'enemy', element?: ElementType) => void;
+  addComboFloatingText: (comboCount: number, damageBonus: number) => void;
+  showBattleRatingEffect: () => void;
+  hideBattleRating: () => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -180,6 +187,15 @@ const loadInitialState = (): GameState => {
     duoLayout: 'horizontal',
     player2Shaking: false,
     duoWinner: null,
+    maxStreak: 0,
+    totalDamageDealt: 0,
+    totalHealingDone: 0,
+    combosUsed: 0,
+    showStreakBonus: false,
+    lastStreakBonus: 0,
+    battleRating: null,
+    showBattleRating: false,
+    highestHitDamage: 0,
   };
 
   const permanentData = loadPermanentData();
@@ -337,6 +353,15 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       floatingTexts: [],
       myCardUsedIds: [],
       levelCardReward: null,
+      maxStreak: 0,
+      totalDamageDealt: 0,
+      totalHealingDone: 0,
+      combosUsed: 0,
+      showStreakBonus: false,
+      lastStreakBonus: 0,
+      battleRating: null,
+      showBattleRating: false,
+      highestHitDamage: 0,
     });
 
     setTimeout(() => get().saveGame(), 0);
@@ -420,6 +445,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const newEnemyStatusEffects = [...currentEnemy.statusEffects];
       const newPlayerStatusEffects = [...state.player.statusEffects];
 
+      const streakBonus = get().getStreakDamageBonus();
+      if (streakBonus > 0 && effectiveCombo.damage > 0) {
+        const bonusDamage = Math.floor(effectiveCombo.damage * streakBonus / 100);
+        damage += bonusDamage;
+      }
+
       if (effectiveCombo.effect && effectiveCombo.effectValue && effectiveCombo.effectDuration !== undefined) {
         const debuffEffects = ['burn', 'poison', 'freeze', 'stun', 'weakness'] as const;
         if (debuffEffects.includes(effectiveCombo.effect as typeof debuffEffects[number])) {
@@ -477,16 +508,25 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }
 
       get().trackDamage(actualDamageDealt);
-      get().addFloatingText('damage', effectiveCombo.damage, 'enemy');
+      get().addDamageFloatingText(damage, 'enemy', card1.element);
       set({ enemyShaking: true });
       setTimeout(() => set({ enemyShaking: false }), 500);
+
+      set((s) => ({
+        totalDamageDealt: s.totalDamageDealt + actualDamageDealt,
+        highestHitDamage: Math.max(s.highestHitDamage, damage),
+        combosUsed: s.combosUsed + 1,
+      }));
 
       let newPlayerHp = state.player.hp;
       let newPlayerShield = state.player.shield;
       let cardsToDraw = 0;
 
+      let totalHealAmount = 0;
+
       if (effectiveCombo.effect === 'heal' && effectiveCombo.effectValue) {
         newPlayerHp = Math.min(state.player.maxHp, newPlayerHp + effectiveCombo.effectValue);
+        totalHealAmount += effectiveCombo.effectValue;
         get().addFloatingText('heal', effectiveCombo.effectValue, 'player');
       }
       if (effectiveCombo.effect === 'shield' && effectiveCombo.effectValue) {
@@ -499,12 +539,19 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       if (effectiveCombo.effect === 'lifesteal' && effectiveCombo.effectValue) {
         const healAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
         newPlayerHp = Math.min(state.player.maxHp, newPlayerHp + healAmount);
+        totalHealAmount += healAmount;
         get().addFloatingText('heal', healAmount, 'player');
       }
       if (effectiveCombo.effect === 'absorb' && effectiveCombo.effectValue) {
         const absorbAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
         newPlayerShield += absorbAmount;
         get().addFloatingText('shield', absorbAmount, 'player');
+      }
+
+      if (totalHealAmount > 0) {
+        set((s) => ({
+          totalHealingDone: s.totalHealingDone + totalHealAmount,
+        }));
       }
 
       const finalDeck = [...newDeck];
@@ -552,10 +599,20 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         showComboEffect: false,
       }));
 
+      get().incrementStreak();
       if (mode === 'challenge' || mode === 'endless') {
-        get().incrementStreak();
         get().addScore(effectiveCombo.damage * 10);
       }
+      const newStreak = get().streak;
+      if (newStreak >= 2) {
+        const bonus = get().getStreakDamageBonus();
+        setTimeout(() => {
+          get().addComboFloatingText(newStreak, bonus);
+        }, 300);
+      }
+      set((s) => ({
+        maxStreak: Math.max(s.maxStreak, newStreak),
+      }));
 
       const comboEssence = combo.rarity === 'legendary' ? 5 : combo.rarity === 'epic' ? 3 : 2;
       get().addEssence(comboEssence);
@@ -566,6 +623,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         const essenceReward = killBonus + waveBonus;
         get().addEssence(essenceReward);
         get().trackWin();
+
+        setTimeout(() => {
+          get().showBattleRatingEffect();
+        }, 600);
 
         const cardReward = get().getBattleCardReward();
         if (cardReward) {
@@ -827,9 +888,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       }
       state.applyStatusEffects();
       state.applyPlayerStatusEffects();
-      if (mode === 'challenge' || mode === 'endless') {
-        get().resetStreak();
-      }
+      get().resetStreak();
       state.decrementAbilityCooldowns();
       state.updateEnemyIntent();
       state.nextTurn();
@@ -1107,6 +1166,117 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     set((state) => ({
       floatingTexts: state.floatingTexts.filter((t) => t.id !== id),
     }));
+  },
+
+  getStreakDamageBonus: () => {
+    const { streak } = get();
+    if (streak <= 1) return 0;
+    const bonusPerStreak = 5;
+    const maxBonus = 100;
+    return Math.min((streak - 1) * bonusPerStreak, maxBonus);
+  },
+
+  calculateDamageTier: (damage: number): import('@/types/game').DamageTier => {
+    if (damage >= 50) return 'devastating';
+    if (damage >= 35) return 'critical';
+    if (damage >= 20) return 'heavy';
+    if (damage >= 10) return 'normal';
+    return 'light';
+  },
+
+  calculateBattleRating: (): import('@/types/game').BattleRating => {
+    const { maxStreak, totalDamageDealt, turn, mode, difficulty, highestHitDamage } = get();
+    
+    let score = 0;
+    
+    score += Math.min(maxStreak * 10, 100);
+    score += Math.min(totalDamageDealt / 10, 100);
+    score += Math.min(highestHitDamage, 50);
+    
+    const turnBonus = Math.max(0, 50 - turn * 2);
+    score += turnBonus;
+    
+    const difficultyMultiplier = DIFFICULTY_CONFIG[difficulty].essenceMultiplier;
+    score = Math.floor(score * difficultyMultiplier);
+    
+    if (score >= 220) return 'S';
+    if (score >= 170) return 'A';
+    if (score >= 120) return 'B';
+    if (score >= 70) return 'C';
+    return 'D';
+  },
+
+  addDamageFloatingText: (damage: number, target: 'player' | 'enemy', element?: ElementType) => {
+    const tier = get().calculateDamageTier(damage);
+    const id = `ft_${Date.now()}_${Math.random()}`;
+    const baseY = target === 'enemy' ? 25 : 65;
+    const offsetY = (Math.random() - 0.5) * 10;
+    const offsetX = (Math.random() - 0.5) * 15;
+    
+    set((state) => ({
+      floatingTexts: [...state.floatingTexts, {
+        id,
+        value: damage,
+        type: 'damage',
+        x: 50 + offsetX,
+        y: baseY + offsetY,
+        tier,
+        isCrit: tier === 'critical' || tier === 'devastating',
+        element,
+      }],
+    }));
+    
+    const duration = tier === 'devastating' ? 1800 : tier === 'critical' ? 1500 : 1200;
+    setTimeout(() => {
+      get().removeFloatingText(id);
+    }, duration);
+  },
+
+  addComboFloatingText: (comboCount: number, damageBonus: number) => {
+    const id = `ft_combo_${Date.now()}_${Math.random()}`;
+    set((state) => ({
+      floatingTexts: [...state.floatingTexts, {
+        id,
+        value: comboCount,
+        type: 'combo',
+        x: 50,
+        y: 45,
+        comboCount,
+        damageBonus,
+      }],
+      showStreakBonus: true,
+      lastStreakBonus: damageBonus,
+    }));
+    
+    setTimeout(() => {
+      get().removeFloatingText(id);
+      set({ showStreakBonus: false });
+    }, 1500);
+  },
+
+  showBattleRatingEffect: () => {
+    const rating = get().calculateBattleRating();
+    const id = `ft_rating_${Date.now()}_${Math.random()}`;
+    set((state) => ({
+      battleRating: rating,
+      showBattleRating: true,
+      floatingTexts: [...state.floatingTexts, {
+        id,
+        value: 0,
+        type: 'rating',
+        x: 50,
+        y: 40,
+        rating,
+      }],
+    }));
+    
+    setTimeout(() => {
+      get().removeFloatingText(id);
+    }, 3000);
+  },
+
+  hideBattleRating: () => {
+    set({ showBattleRating: false, battleRating: null });
   },
 
   setShaking: (target: 'player' | 'enemy', value: boolean) => {

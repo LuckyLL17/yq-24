@@ -192,12 +192,21 @@ export type DuoScreenLayout = 'horizontal' | 'vertical';
 export type GamePhase = 'menu' | 'battle' | 'victory' | 'defeat';
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'nightmare';
 
+export type DamageTier = 'light' | 'normal' | 'heavy' | 'critical' | 'devastating';
+export type BattleRating = 'S' | 'A' | 'B' | 'C' | 'D';
+
 export interface FloatingText {
   id: string;
   value: number;
-  type: 'damage' | 'heal' | 'shield';
+  type: 'damage' | 'heal' | 'shield' | 'combo' | 'rating';
   x: number;
   y: number;
+  tier?: DamageTier;
+  isCrit?: boolean;
+  comboCount?: number;
+  damageBonus?: number;
+  rating?: string;
+  element?: ElementType;
 }
 
 export type QuestType = 'use_combo' | 'win_battle' | 'total_damage' | 'reach_wave' | 'use_combo_category';
@@ -344,4 +353,13 @@ export interface GameState {
   duoLayout: DuoScreenLayout;
   player2Shaking: boolean;
   duoWinner: 1 | 2 | null;
+  maxStreak: number;
+  totalDamageDealt: number;
+  totalHealingDone: number;
+  combosUsed: number;
+  showStreakBonus: boolean;
+  lastStreakBonus: number;
+  battleRating: BattleRating | null;
+  showBattleRating: boolean;
+  highestHitDamage: number;
 }

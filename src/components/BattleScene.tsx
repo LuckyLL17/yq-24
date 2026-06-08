@@ -43,6 +43,9 @@ export default function BattleScene() {
     getEquippedMyCards,
     selectMyCard,
     isMyCardOnCooldown,
+    getStreakDamageBonus,
+    showStreakBonus,
+    maxStreak,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -146,6 +149,26 @@ export default function BattleScene() {
             </div>
           </div>
 
+          <div className="w-px h-10 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
+
+          <div className="text-center">
+            <div className="text-xs text-white/50 mb-1">连击</div>
+            <div className={cn(
+              'text-2xl font-black text-stroke relative',
+              showStreakBonus ? 'text-yellow-300 scale-110' : 'text-amber-400'
+            )} style={{ 
+              fontFamily: "'Cinzel Decorative', serif",
+              transition: 'all 0.3s ease'
+            }}>
+              {streak}
+              {getStreakDamageBonus() > 0 && (
+                <span className="absolute -right-8 top-0 text-sm font-bold text-green-400">
+                  +{getStreakDamageBonus()}%
+                </span>
+              )}
+            </div>
+          </div>
+
           {(mode === 'challenge' || mode === 'endless') && (
             <>
               <div className="w-px h-10 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
@@ -154,15 +177,6 @@ export default function BattleScene() {
                 <div className="text-xs text-white/50 mb-1">波次</div>
                 <div className="text-2xl font-black text-purple-400 text-stroke" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
                   {wave}
-                </div>
-              </div>
-
-              <div className="w-px h-10 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent" />
-
-              <div className="text-center">
-                <div className="text-xs text-white/50 mb-1">连击</div>
-                <div className="text-2xl font-black text-amber-400 text-stroke" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
-                  {streak}
                 </div>
               </div>
 
@@ -319,28 +333,97 @@ export default function BattleScene() {
       </div>
 
       {/* 浮动伤害数字 */}
-      {floatingTexts.map((ft) => (
-        <div
-          key={ft.id}
-          className={cn(
-            'fixed z-30 pointer-events-none text-4xl font-black text-stroke',
-            ft.type === 'damage' && 'text-red-500 animate-damage-float',
-            ft.type === 'heal' && 'text-green-400 animate-heal-float',
-            ft.type === 'shield' && 'text-amber-400 animate-heal-float'
-          )}
-          style={{
-            left: `${ft.x}%`,
-            top: `${ft.y}%`,
-            transform: 'translateX(-50%)',
-            fontFamily: "'Cinzel Decorative', serif",
-          }}
-        >
-          {ft.type === 'damage' && '-'}
-          {ft.type === 'heal' && '+'}
-          {ft.type === 'shield' && '🛡️+'}
-          {ft.value}
-        </div>
-      ))}
+      {floatingTexts.map((ft) => {
+        const tierClass = ft.tier ? `damage-tier-${ft.tier}` : '';
+        const isCrit = ft.isCrit;
+        
+        if (ft.type === 'combo') {
+          return (
+            <div
+              key={ft.id}
+              className="fixed z-40 pointer-events-none combo-float-text"
+              style={{
+                left: `${ft.x}%`,
+                top: `${ft.y}%`,
+                transform: 'translateX(-50%)',
+                fontFamily: "'Cinzel Decorative', serif",
+              }}
+            >
+              <div className="text-center">
+                <div className="text-5xl font-black text-amber-400 text-stroke mb-1">
+                  {ft.comboCount} COMBO!
+                </div>
+                <div className="text-xl font-bold text-green-400 text-stroke">
+                  +{ft.damageBonus}% 伤害加成
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (ft.type === 'rating') {
+          const ratingColors: Record<string, string> = {
+            'S': 'text-amber-400',
+            'A': 'text-red-400',
+            'B': 'text-purple-400',
+            'C': 'text-blue-400',
+            'D': 'text-gray-400',
+          };
+          return (
+            <div
+              key={ft.id}
+              className="fixed z-40 pointer-events-none rating-float-text"
+              style={{
+                left: `${ft.x}%`,
+                top: `${ft.y}%`,
+                transform: 'translateX(-50%)',
+                fontFamily: "'Cinzel Decorative', serif",
+              }}
+            >
+              <div className="text-center">
+                <div className={cn(
+                  'text-7xl font-black text-stroke',
+                  ratingColors[ft.rating || 'D']
+                )}>
+                  {ft.rating}
+                </div>
+                <div className="text-lg text-white/70 mt-1">评级</div>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div
+            key={ft.id}
+            className={cn(
+              'fixed z-30 pointer-events-none font-black text-stroke',
+              ft.type === 'damage' && 'text-red-500',
+              ft.type === 'heal' && 'text-green-400 animate-heal-float',
+              ft.type === 'shield' && 'text-amber-400 animate-heal-float',
+              ft.type === 'damage' && tierClass,
+              isCrit && 'text-yellow-300'
+            )}
+            style={{
+              left: `${ft.x}%`,
+              top: `${ft.y}%`,
+              transform: 'translateX(-50%)',
+              fontFamily: "'Cinzel Decorative', serif",
+            }}
+          >
+            {ft.type === 'damage' && isCrit && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-sm font-bold text-yellow-300 whitespace-nowrap">
+                💥 暴击!
+              </div>
+            )}
+            {ft.type === 'damage' && !tierClass && 'animate-damage-float'}
+            {ft.type === 'damage' && '-'}
+            {ft.type === 'heal' && '+'}
+            {ft.type === 'shield' && '🛡️+'}
+            {ft.value}
+          </div>
+        );
+      })}
 
       {/* 底部手牌区域 */}
       <div className="relative z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-6 pb-4">
@@ -371,8 +454,9 @@ export default function BattleScene() {
                 {CATEGORY_NAMES[previewCombo.category]}
               </span>
               {previewLevel > 1 && (
-                <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/80 text-white">
-                  Lv.{previewLevel}
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/30 border border-amber-300/50">
+                  <span>⭐</span>
+                  <span>Lv.{previewLevel}</span>
                 </span>
               )}
               {isOnCooldown && (
