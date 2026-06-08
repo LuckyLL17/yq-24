@@ -19,6 +19,9 @@ export default function MyCards() {
     getSynthesizeCost,
     getDisassembleValue,
     getAllCardTemplates,
+    equipMyCard,
+    unequipMyCard,
+    getEquippedMyCards,
   } = useGameStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('collection');
@@ -125,6 +128,27 @@ export default function MyCards() {
   const getOwnedCount = (name: string, element: ElementType) => {
     const card = collection.find((c) => c.name === name && c.element === element);
     return card?.count || 0;
+  };
+
+  const isCardEquipped = (cardId: string) => {
+    return getEquippedMyCards().some(c => c.id === cardId);
+  };
+
+  const handleEquipCard = (cardId: string) => {
+    const equippedCount = getEquippedMyCards().length;
+    if (equippedCount >= 3) {
+      showMessage('出战卡组已满（最多3张）');
+      return;
+    }
+    const result = equipMyCard(cardId);
+    if (result) {
+      showMessage('已装备到出战卡组');
+    }
+  };
+
+  const handleUnequipCard = (cardId: string) => {
+    unequipMyCard(cardId);
+    showMessage('已从出战卡组卸下');
   };
 
   const rarityColors: Record<Rarity, string> = {
@@ -265,6 +289,10 @@ export default function MyCards() {
                 cards={filteredCollection}
                 totalCards={collectionStats.total}
                 uniqueCards={collectionStats.unique}
+                equippedCards={getEquippedMyCards()}
+                onEquip={handleEquipCard}
+                onUnequip={handleUnequipCard}
+                isCardEquipped={isCardEquipped}
               />
             )}
 
@@ -374,10 +402,18 @@ function CollectionView({
   cards,
   totalCards,
   uniqueCards,
+  equippedCards,
+  onEquip,
+  onUnequip,
+  isCardEquipped,
 }: {
   cards: CollectedCard[];
   totalCards: number;
   uniqueCards: number;
+  equippedCards: CollectedCard[];
+  onEquip: (cardId: string) => void;
+  onUnequip: (cardId: string) => void;
+  isCardEquipped: (cardId: string) => boolean;
 }) {
   if (cards.length === 0) {
     return (
@@ -391,6 +427,55 @@ function CollectionView({
 
   return (
     <div>
+      {/* 出战卡组 */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 rounded-xl border border-emerald-500/30">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚔️</span>
+            <h3 className="text-lg font-bold text-emerald-300" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              出战卡组
+            </h3>
+            <span className="text-xs text-white/50">({equippedCards.length}/3)</span>
+          </div>
+          <span className="text-xs text-white/40">战斗中每局限用1次，击败敌人后重置</span>
+        </div>
+        <div className="flex gap-3">
+          {[0, 1, 2].map((slot) => {
+            const card = equippedCards[slot];
+            return (
+              <div
+                key={slot}
+                className={cn(
+                  'w-20 h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all',
+                  card
+                    ? 'border-emerald-400/50 bg-emerald-500/10'
+                    : 'border-white/10 bg-white/5'
+                )}
+              >
+                {card ? (
+                  <div className="relative w-full h-full p-2">
+                    <div className="text-center">
+                      <div className="text-2xl mb-1">{ELEMENTS[card.element].icon}</div>
+                      <div className="text-[10px] font-bold text-white truncate">{card.name}</div>
+                      <div className="text-[9px] text-amber-400">⚔️ {card.power}</div>
+                    </div>
+                    <button
+                      onClick={() => onUnequip(card.id)}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-xs flex items-center justify-center transition-all"
+                      title="卸下"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-white/20 text-2xl">+</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex items-center gap-6 mb-4 text-sm">
         <span className="text-white/50">
           已收集: <span className="text-emerald-400 font-bold">{uniqueCards}</span> 种
@@ -401,7 +486,13 @@ function CollectionView({
       </div>
       <div className="grid grid-cols-6 gap-3">
         {cards.map((card) => (
-          <CollectionCard key={card.id} card={card} />
+          <CollectionCard
+            key={card.id}
+            card={card}
+            isEquipped={isCardEquipped(card.id)}
+            onEquip={() => onEquip(card.id)}
+            onUnequip={() => onUnequip(card.id)}
+          />
         ))}
       </div>
     </div>
@@ -547,7 +638,7 @@ function SynthesizeView({
   );
 }
 
-function CollectionCard({ card }: { card: CollectedCard }) {
+function CollectionCard({ card, isEquipped, onEquip, onUnequip }: { card: CollectedCard; isEquipped: boolean; onEquip: () => void; onUnequip: () => void }) {
   const rarityColors: Record<Rarity, string> = {
     common: 'text-gray-400',
     rare: 'text-blue-400',
@@ -559,9 +650,16 @@ function CollectionCard({ card }: { card: CollectedCard }) {
     <div
       className={cn(
         'group relative rounded-xl overflow-hidden bg-slate-800/50 border transition-all duration-300',
-        'border-white/10 hover:border-emerald-500/40 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/20'
+        isEquipped
+          ? 'border-emerald-400/60 bg-emerald-500/10 ring-2 ring-emerald-400/30'
+          : 'border-white/10 hover:border-emerald-500/40 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/20'
       )}
     >
+      {isEquipped && (
+        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[9px] font-bold z-10">
+          已装备
+        </div>
+      )}
       <div className="relative p-3 flex flex-col items-center text-center">
         <div className="text-3xl mb-2">{ELEMENTS[card.element].icon}</div>
         <h4 className="text-xs font-bold text-white mb-1 truncate w-full">{card.name}</h4>
@@ -573,6 +671,24 @@ function CollectionCard({ card }: { card: CollectedCard }) {
         </div>
         <div className="text-[10px] text-white/40 mt-1">
           ⚔️ {card.power}
+        </div>
+
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          {isEquipped ? (
+            <button
+              onClick={onUnequip}
+              className="px-2 py-1 rounded bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold transition-all"
+            >
+              卸下
+            </button>
+          ) : (
+            <button
+              onClick={onEquip}
+              className="px-2 py-1 rounded bg-emerald-500/80 hover:bg-emerald-500 text-white text-xs font-semibold transition-all"
+            >
+              装备
+            </button>
+          )}
         </div>
       </div>
     </div>

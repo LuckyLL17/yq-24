@@ -40,6 +40,9 @@ export default function BattleScene() {
     dailyQuests,
     tutorial,
     startTutorial,
+    getEquippedMyCards,
+    useMyCard,
+    isMyCardOnCooldown,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -222,44 +225,92 @@ export default function BattleScene() {
       </div>
 
       {/* 战场中央区域 */}
-      <div className="flex-1 relative z-10 flex flex-col items-center justify-between py-6">
-        {/* 敌方区域 */}
-        <div className="relative">
-          <div className="platform rounded-2xl px-16 py-6">
-            <CharacterDisplay
-              character={enemy}
-              showIntent
-              intent={enemy.intent}
-              intentValue={enemy.intentValue}
-              isShaking={enemyShaking}
-              size="lg"
-              tier={enemy.tier}
-              bossPhase={enemy.bossPhase}
-              isBoss={enemy.isBoss}
-              level={enemy.level}
-            />
+      <div className="flex-1 relative z-10 flex items-stretch">
+        {/* 我的卡牌侧边栏 */}
+        {getEquippedMyCards().length > 0 && (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-2 bg-black/30 backdrop-blur-sm border-r border-white/10">
+            <div className="text-xs text-white/50 font-bold writing-vertical" style={{ writingMode: 'vertical-rl' }}>
+              我的卡牌
+            </div>
+            <div className="flex flex-col gap-2">
+              {getEquippedMyCards().map((card) => {
+                const onCooldown = isMyCardOnCooldown(card.id);
+                return (
+                  <div
+                    key={card.id}
+                    className={cn(
+                      'relative transition-all duration-300 cursor-pointer',
+                      onCooldown ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:scale-110 hover:-translate-x-1',
+                      isAnimating ? 'pointer-events-none' : ''
+                    )}
+                    onClick={() => {
+                      if (!onCooldown && !isAnimating) {
+                        useMyCard(card.id);
+                      }
+                    }}
+                  >
+                    <ElementCard
+                      card={card}
+                      size="sm"
+                      disabled={onCooldown || isAnimating}
+                    />
+                    {onCooldown && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
+                        <span className="text-2xl">⏳</span>
+                      </div>
+                    )}
+                    {!onCooldown && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow-lg">
+                        ✓
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* 中间装饰分隔 */}
-        <div className="relative w-full max-w-xl flex items-center justify-center py-2">
-          <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-          <div className="relative px-6 py-1.5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-full border border-amber-500/30">
-            <span className="text-amber-400 font-bold text-sm tracking-widest" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
-              ⚔️ VS ⚔️
-            </span>
+        {/* 主战场区域 */}
+        <div className="flex-1 flex flex-col items-center justify-between py-6">
+          {/* 敌方区域 */}
+          <div className="relative">
+            <div className="platform rounded-2xl px-16 py-6">
+              <CharacterDisplay
+                character={enemy}
+                showIntent
+                intent={enemy.intent}
+                intentValue={enemy.intentValue}
+                isShaking={enemyShaking}
+                size="lg"
+                tier={enemy.tier}
+                bossPhase={enemy.bossPhase}
+                isBoss={enemy.isBoss}
+                level={enemy.level}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* 玩家区域 */}
-        <div className="relative">
-          <div className="platform rounded-2xl px-16 py-6">
-            <CharacterDisplay
-              character={player}
-              isPlayer
-              isShaking={playerShaking}
-              size="lg"
-            />
+          {/* 中间装饰分隔 */}
+          <div className="relative w-full max-w-xl flex items-center justify-center py-2">
+            <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+            <div className="relative px-6 py-1.5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-full border border-amber-500/30">
+              <span className="text-amber-400 font-bold text-sm tracking-widest" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                ⚔️ VS ⚔️
+              </span>
+            </div>
+          </div>
+
+          {/* 玩家区域 */}
+          <div className="relative">
+            <div className="platform rounded-2xl px-16 py-6">
+              <CharacterDisplay
+                character={player}
+                isPlayer
+                isShaking={playerShaking}
+                size="lg"
+              />
+            </div>
           </div>
         </div>
       </div>

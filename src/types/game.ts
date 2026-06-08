@@ -26,6 +26,15 @@ export type EffectType =
   | 'weakness'
   | 'strength';
 
+export type CardSkillType = 
+  | 'heavy_damage' 
+  | 'damage_heal' 
+  | 'damage_freeze' 
+  | 'damage_shield' 
+  | 'multi_hit' 
+  | 'big_heal' 
+  | 'life_drain';
+
 export interface Card {
   id: string;
   element: ElementType;
@@ -33,6 +42,8 @@ export interface Card {
   description: string;
   power: number;
   rarity: Rarity;
+  skillType?: CardSkillType;
+  skillValue?: number;
 }
 
 export interface ComboUpgrade {
@@ -265,6 +276,8 @@ export interface CollectedCard {
   rarity: Rarity;
   count: number;
   obtainedAt: number;
+  skillType?: CardSkillType;
+  skillValue?: number;
 }
 
 export interface PlayerCosmetics {
@@ -274,6 +287,7 @@ export interface PlayerCosmetics {
   equippedAvatar: string | null;
   openedCardPacks: string[];
   collection: CollectedCard[];
+  equippedMyCards: string[];
 }
 
 export type TutorialStep = 
@@ -321,4 +335,6 @@ export interface GameState {
   showMyCards: boolean;
   cosmetics: PlayerCosmetics;
   tutorial: TutorialState;
+  myCardUsedIds: string[];
+  levelCardReward: Card | null;
 }

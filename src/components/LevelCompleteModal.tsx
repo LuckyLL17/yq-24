@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, createEnemy, ENEMIES } from '@/data/gameData';
+import { DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, createEnemy, ENEMIES, ELEMENTS, RARITY_NAMES } from '@/data/gameData';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ export default function LevelCompleteModal() {
     difficulty,
     proceedToNextLevel,
     hideLevelCompleteScreen,
+    levelCardReward,
   } = useGameStore();
 
   const [countdown, setCountdown] = useState(5);
@@ -124,6 +125,47 @@ export default function LevelCompleteModal() {
               </span>
             </div>
           </div>
+
+          {levelCardReward && (
+            <div className="bg-gradient-to-br from-emerald-900/40 to-cyan-900/40 rounded-2xl p-5 mb-6 border border-emerald-500/40 animate-pulse-slow">
+              <div className="text-sm text-emerald-300 mb-3 font-semibold">🎴 获得新卡牌！</div>
+              <div className="flex items-center justify-center gap-4">
+                <div className="w-16 h-20 rounded-xl bg-slate-800/70 border-2 border-amber-400/50 flex flex-col items-center justify-center shadow-lg shadow-amber-500/20">
+                  <div className="text-2xl mb-1">{ELEMENTS[levelCardReward.element].icon}</div>
+                  <div className="text-[10px] font-bold text-white text-center px-1 truncate w-full">
+                    {levelCardReward.name}
+                  </div>
+                  <div className={cn(
+                    'text-[9px] font-semibold mt-0.5',
+                    levelCardReward.rarity === 'legendary' ? 'text-amber-400' :
+                    levelCardReward.rarity === 'epic' ? 'text-purple-400' :
+                    levelCardReward.rarity === 'rare' ? 'text-blue-400' : 'text-gray-400'
+                  )}>
+                    {RARITY_NAMES[levelCardReward.rarity]}
+                  </div>
+                </div>
+                <div className="text-left">
+                  <div className="text-white font-bold text-lg">
+                    {levelCardReward.name}
+                  </div>
+                  <div className={cn(
+                    'text-sm font-semibold',
+                    levelCardReward.rarity === 'legendary' ? 'text-amber-400' :
+                    levelCardReward.rarity === 'epic' ? 'text-purple-400' :
+                    levelCardReward.rarity === 'rare' ? 'text-blue-400' : 'text-gray-400'
+                  )}>
+                    {RARITY_NAMES[levelCardReward.rarity]}
+                  </div>
+                  <div className="text-xs text-white/50 mt-1">
+                    {levelCardReward.description}
+                  </div>
+                  <div className="text-xs text-amber-300 mt-1">
+                    ⚔️ 威力: {levelCardReward.power}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {hasNextLevel && nextEnemy && (
             <div className="mb-6">

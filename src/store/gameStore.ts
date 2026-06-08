@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity } from '@/types/game';
-import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES } from '@/data/gameData';
+import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES, createCardByRarityWeight } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
 interface GameActions {
@@ -86,7 +86,15 @@ interface GameActions {
   synthesizeCard: (element: ElementType, cardName: string) => CollectedCard | null;
   getSynthesizeCost: (rarity: Rarity) => number;
   getDisassembleValue: (rarity: Rarity) => number;
-  getAllCardTemplates: () => Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity }>;
+  getAllCardTemplates: () => Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; skillType?: string; skillValue?: number }>;
+  equipMyCard: (cardId: string) => boolean;
+  unequipMyCard: (cardId: string) => void;
+  getEquippedMyCards: () => CollectedCard[];
+  useMyCard: (cardId: string) => boolean;
+  isMyCardOnCooldown: (cardId: string) => boolean;
+  resetMyCardCooldowns: () => void;
+  addCardToCollection: (card: Card) => void;
+  getBattleCardReward: () => Card | null;
 }
 
 const initialPlayerState = (): Player => {
@@ -118,6 +126,7 @@ const initialCosmeticsState = (): PlayerCosmetics => ({
   equippedAvatar: null,
   openedCardPacks: [],
   collection: [],
+  equippedMyCards: [],
 });
 
 const loadInitialState = (): GameState => {
@@ -154,6 +163,8 @@ const loadInitialState = (): GameState => {
       showTutorial: false,
       currentStep: 'welcome',
     },
+    myCardUsedIds: [],
+    levelCardReward: null,
   };
 
   const permanentData = loadPermanentData();
@@ -309,6 +320,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       level: 1,
       maxLevel,
       floatingTexts: [],
+      myCardUsedIds: [],
+      levelCardReward: null,
     });
 
     setTimeout(() => get().saveGame(), 0);
@@ -534,6 +547,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         const essenceReward = killBonus + waveBonus;
         get().addEssence(essenceReward);
         get().trackWin();
+
+        const cardReward = get().getBattleCardReward();
+        if (cardReward) {
+          get().addCardToCollection(cardReward);
+          set({ levelCardReward: cardReward });
+        }
         
         if (mode === 'classic' || mode === 'quick') {
           const state = get();
@@ -982,6 +1001,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         enemy: newEnemy,
         turn: state.turn + 1,
         showLevelComplete: false,
+        myCardUsedIds: [],
+        levelCardReward: null,
       };
     });
     get().drawCards(2);
@@ -1023,6 +1044,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         enemy: newEnemy,
         turn: state.turn + 1,
         showLevelComplete: false,
+        myCardUsedIds: [],
+        levelCardReward: null,
       };
     });
     get().drawCards(2);
@@ -1480,11 +1503,23 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       },
     }));
 
+    const cardDropChance = quest.rarity === 'common' ? 0.3 : quest.rarity === 'rare' ? 0.5 : 0.8;
+    if (Math.random() < cardDropChance) {
+      const rarityWeights = quest.rarity === 'common'
+        ? { common: 70, rare: 25, epic: 4, legendary: 1 }
+        : quest.rarity === 'rare'
+        ? { common: 50, rare: 35, epic: 12, legendary: 3 }
+        : { common: 30, rare: 30, epic: 28, legendary: 12 };
+      const cardReward = createCardByRarityWeight(rarityWeights);
+      get().addCardToCollection(cardReward);
+    }
+
     savePermanentData({
       elementEssence: get().elementEssence,
       comboLevels: get().player.comboLevels,
       dailyQuests: get().dailyQuests,
       cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
     });
 
     return true;
@@ -1640,6 +1675,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         description: variant.description,
         power: variant.power,
         rarity: variant.rarity,
+        skillType: variant.skillType as Card['skillType'],
+        skillValue: variant.skillValue,
       });
     }
 
@@ -1663,6 +1700,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             description: card.description,
             power: card.power,
             rarity: card.rarity,
+            skillType: card.skillType,
+            skillValue: card.skillValue,
             count: 1,
             obtainedAt: Date.now(),
           });
@@ -2030,6 +2069,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           description: cardTemplate.description,
           power: cardTemplate.power,
           rarity: cardTemplate.rarity,
+          skillType: cardTemplate.skillType as CollectedCard['skillType'],
+          skillValue: cardTemplate.skillValue,
           count: 1,
           obtainedAt: Date.now(),
         };
@@ -2057,7 +2098,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   getAllCardTemplates: () => {
-    const templates: Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity }> = [];
+    const templates: Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; skillType?: string; skillValue?: number }> = [];
     const elements: ElementType[] = ['fire', 'water', 'earth', 'wind', 'lightning', 'light', 'dark'];
     elements.forEach((element) => {
       CARD_VARIANTS[element].forEach((variant) => {
@@ -2067,9 +2108,240 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           description: variant.description,
           power: variant.power,
           rarity: variant.rarity,
+          skillType: variant.skillType,
+          skillValue: variant.skillValue,
         });
       });
     });
     return templates;
+  },
+
+  equipMyCard: (cardId: string): boolean => {
+    const state = get();
+    const card = state.cosmetics.collection.find(c => c.id === cardId);
+    if (!card) return false;
+    if (state.cosmetics.equippedMyCards.length >= 3) return false;
+    if (state.cosmetics.equippedMyCards.includes(cardId)) return false;
+
+    set((s) => ({
+      cosmetics: {
+        ...s.cosmetics,
+        equippedMyCards: [...s.cosmetics.equippedMyCards, cardId],
+      },
+    }));
+    setTimeout(() => get().saveGame(), 0);
+    return true;
+  },
+
+  unequipMyCard: (cardId: string): void => {
+    set((state) => ({
+      cosmetics: {
+        ...state.cosmetics,
+        equippedMyCards: state.cosmetics.equippedMyCards.filter(id => id !== cardId),
+      },
+    }));
+    setTimeout(() => get().saveGame(), 0);
+  },
+
+  getEquippedMyCards: (): CollectedCard[] => {
+    const state = get();
+    return state.cosmetics.equippedMyCards
+      .map(id => state.cosmetics.collection.find(c => c.id === id))
+      .filter((c): c is CollectedCard => c !== undefined);
+  },
+
+  isMyCardOnCooldown: (cardId: string): boolean => {
+    return get().myCardUsedIds.includes(cardId);
+  },
+
+  resetMyCardCooldowns: (): void => {
+    set({ myCardUsedIds: [] });
+  },
+
+  useMyCard: (cardId: string): boolean => {
+    const state = get();
+    if (state.isAnimating) return false;
+    if (!state.enemy || state.enemy.hp <= 0) return false;
+    if (state.myCardUsedIds.includes(cardId)) return false;
+
+    const card = state.cosmetics.collection.find(c => c.id === cardId);
+    if (!card) return false;
+
+    set((s) => ({
+      myCardUsedIds: [...s.myCardUsedIds, cardId],
+      isAnimating: true,
+    }));
+
+    const damage = card.power;
+    const skillType = card.skillType;
+    const skillValue = card.skillValue || 0;
+
+    setTimeout(() => {
+      const s = get();
+      if (!s.enemy) return;
+
+      let totalDamage = damage;
+      let healAmount = 0;
+      let shieldAmount = 0;
+      const newEnemyStatusEffects = [...s.enemy.statusEffects];
+      const newPlayerStatusEffects = [...s.player.statusEffects];
+
+      if (skillType === 'heavy_damage') {
+        totalDamage = damage;
+      } else if (skillType === 'damage_heal') {
+        totalDamage = damage;
+        healAmount = skillValue;
+      } else if (skillType === 'damage_freeze') {
+        totalDamage = damage;
+        const existingFreeze = newEnemyStatusEffects.find(e => e.type === 'freeze');
+        if (existingFreeze) {
+          existingFreeze.duration = Math.max(existingFreeze.duration, skillValue);
+        } else {
+          newEnemyStatusEffects.push({ type: 'freeze', value: 0, duration: skillValue });
+        }
+      } else if (skillType === 'damage_shield') {
+        totalDamage = damage;
+        shieldAmount = skillValue;
+      } else if (skillType === 'multi_hit') {
+        totalDamage = Math.floor(damage * 0.4) * skillValue;
+      } else if (skillType === 'big_heal') {
+        healAmount = skillValue;
+        totalDamage = 0;
+      } else if (skillType === 'life_drain') {
+        totalDamage = damage;
+        healAmount = skillValue;
+      }
+
+      if (totalDamage > 0) {
+        get().takeDamage('enemy', totalDamage);
+        get().addFloatingText('damage', totalDamage, 'enemy');
+      }
+      if (healAmount > 0) {
+        get().heal(healAmount);
+        get().addFloatingText('heal', healAmount, 'player');
+      }
+      if (shieldAmount > 0) {
+        get().addShield(shieldAmount);
+        get().addFloatingText('shield', shieldAmount, 'player');
+      }
+
+      set((s) => ({
+        enemy: s.enemy ? {
+          ...s.enemy,
+          statusEffects: newEnemyStatusEffects,
+        } : null,
+        player: {
+          ...s.player,
+          statusEffects: newPlayerStatusEffects,
+        },
+      }));
+
+      setTimeout(() => {
+        const currentState = get();
+        if (!currentState.enemy) {
+          set({ isAnimating: false });
+          return;
+        }
+
+        if (currentState.enemy.hp <= 0) {
+          const killBonus = card.rarity === 'legendary' ? 20 : card.rarity === 'epic' ? 12 : card.rarity === 'rare' ? 7 : 4;
+          const waveBonus = currentState.wave * 2;
+          const essenceReward = killBonus + waveBonus;
+          get().addEssence(essenceReward);
+          get().trackWin();
+
+          const cardReward = get().getBattleCardReward();
+          if (cardReward) {
+            get().addCardToCollection(cardReward);
+            set({ levelCardReward: cardReward });
+          }
+
+          if (currentState.mode === 'classic' || currentState.mode === 'quick') {
+            const st = get();
+            const levels = currentState.mode === 'quick' ? QUICK_LEVELS : CLASSIC_LEVELS;
+            if (st.level >= levels.length) {
+              clearBattleSave();
+              setTimeout(() => set({ phase: 'victory', isAnimating: false }), 800);
+            } else {
+              setTimeout(() => {
+                get().showLevelCompleteScreen(essenceReward);
+                set({ isAnimating: false });
+              }, 800);
+            }
+          } else {
+            setTimeout(() => {
+              get().nextWave();
+              set({ isAnimating: false });
+            }, 1200);
+          }
+        } else {
+          setTimeout(() => {
+            get().checkBossPhaseTransition();
+            setTimeout(() => {
+              get().enemyTurn();
+              set({ isAnimating: false });
+            }, 500);
+          }, 500);
+        }
+      }, 500);
+    }, 600);
+
+    return true;
+  },
+
+  addCardToCollection: (card: Card): void => {
+    set((state) => {
+      const existingCard = state.cosmetics.collection.find(
+        c => c.element === card.element && c.name === card.name
+      );
+
+      let newCollection: CollectedCard[];
+      if (existingCard) {
+        newCollection = state.cosmetics.collection.map(c =>
+          c.id === existingCard.id
+            ? { ...c, count: c.count + 1 }
+            : c
+        );
+      } else {
+        const newCollectedCard: CollectedCard = {
+          id: `collected_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          element: card.element,
+          name: card.name,
+          description: card.description,
+          power: card.power,
+          rarity: card.rarity,
+          skillType: card.skillType,
+          skillValue: card.skillValue,
+          count: 1,
+          obtainedAt: Date.now(),
+        };
+        newCollection = [...state.cosmetics.collection, newCollectedCard];
+      }
+
+      return {
+        cosmetics: {
+          ...state.cosmetics,
+          collection: newCollection,
+        },
+      };
+    });
+    setTimeout(() => get().saveGame(), 0);
+  },
+
+  getBattleCardReward: (): Card | null => {
+    const state = get();
+    const dropChance = state.difficulty === 'easy' ? 0.3 : state.difficulty === 'normal' ? 0.4 : state.difficulty === 'hard' ? 0.5 : 0.6;
+    
+    if (Math.random() > dropChance) return null;
+
+    const rarityWeights = state.difficulty === 'easy'
+      ? { common: 70, rare: 25, epic: 4, legendary: 1 }
+      : state.difficulty === 'normal'
+      ? { common: 60, rare: 28, epic: 9, legendary: 3 }
+      : state.difficulty === 'hard'
+      ? { common: 45, rare: 30, epic: 18, legendary: 7 }
+      : { common: 30, rare: 30, epic: 25, legendary: 15 };
+
+    return createCardByRarityWeight(rarityWeights);
   },
 }));
