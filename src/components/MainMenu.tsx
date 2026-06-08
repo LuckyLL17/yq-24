@@ -6,7 +6,7 @@ import type { GameMode, Difficulty } from '@/types/game';
 import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
@@ -353,6 +353,16 @@ export default function MainMenu() {
               >
                 <span>📖</span>
                 <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>组合技图鉴</span>
+              </button>
+              <button
+                onClick={() => {
+                  startTutorial();
+                  startBattle('classic', 'easy');
+                }}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-teal-500/30 hover:from-emerald-500/50 hover:to-teal-500/50 text-white/80 hover:text-white transition-all duration-300 border border-emerald-500/30 hover:border-emerald-400/50 flex items-center gap-2"
+              >
+                <span>🎓</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>新手教程</span>
               </button>
             </div>
           </>

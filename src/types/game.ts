@@ -276,6 +276,22 @@ export interface PlayerCosmetics {
   collection: CollectedCard[];
 }
 
+export type TutorialStep = 
+  | 'welcome'
+  | 'cards'
+  | 'combo'
+  | 'release'
+  | 'status_effects'
+  | 'turn_based'
+  | 'hp_shield'
+  | 'complete';
+
+export interface TutorialState {
+  tutorialCompleted: boolean;
+  showTutorial: boolean;
+  currentStep: TutorialStep;
+}
+
 export interface GameState {
   phase: GamePhase;
   mode: GameMode;
@@ -303,4 +319,5 @@ export interface GameState {
   showDailyQuests: boolean;
   showShop: boolean;
   cosmetics: PlayerCosmetics;
+  tutorial: TutorialState;
 }

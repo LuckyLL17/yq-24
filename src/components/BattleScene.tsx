@@ -4,8 +4,10 @@ import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
 import UpgradePanel from './UpgradePanel';
 import LevelCompleteModal from './LevelCompleteModal';
+import Tutorial from './Tutorial';
 import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel, DIFFICULTY_CONFIG } from '@/data/gameData';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 export default function BattleScene() {
   const {
@@ -36,6 +38,8 @@ export default function BattleScene() {
     toggleUpgradePanel,
     toggleDailyQuests,
     dailyQuests,
+    tutorial,
+    startTutorial,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -50,6 +54,12 @@ export default function BattleScene() {
   const isOnCooldown = previewCombo ? isComboOnCooldown(previewCombo.id) : false;
 
   const canPlay = selectedCards.length === 2 && previewCombo && !isAnimating && !isOnCooldown;
+
+  useEffect(() => {
+    if (enemy && !tutorial.tutorialCompleted && !tutorial.showTutorial) {
+      startTutorial();
+    }
+  }, [enemy, tutorial.tutorialCompleted, tutorial.showTutorial, startTutorial]);
 
   const handleCardClick = (card: typeof selectedCards[0]) => {
     if (isAnimating) return;
@@ -444,6 +454,9 @@ export default function BattleScene() {
 
       {/* 关卡结算弹窗 */}
       <LevelCompleteModal />
+
+      {/* 新手教程 */}
+      <Tutorial />
     </div>
   );
 }

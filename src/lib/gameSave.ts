@@ -8,6 +8,7 @@ export interface PermanentSaveData {
   comboLevels: Player['comboLevels'];
   dailyQuests: DailyQuestState;
   cosmetics: PlayerCosmetics;
+  tutorialCompleted?: boolean;
   savedAt: number;
 }
 

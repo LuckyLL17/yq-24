@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics } from '@/types/game';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep } from '@/types/game';
 import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
@@ -73,6 +73,13 @@ interface GameActions {
   getCollectionStats: () => { total: number; unique: number; byRarity: Record<string, number> };
   getEquippedCardBorderData: () => import('@/types/game').CardBorder | null;
   getEquippedAvatarData: () => import('@/types/game').ShopAvatar | null;
+  startTutorial: () => void;
+  nextTutorialStep: () => void;
+  prevTutorialStep: () => void;
+  setTutorialStep: (step: TutorialStep) => void;
+  skipTutorial: () => void;
+  completeTutorial: () => void;
+  isTutorialCompleted: () => boolean;
 }
 
 const initialPlayerState = (): Player => {
@@ -134,6 +141,11 @@ const loadInitialState = (): GameState => {
     showDailyQuests: false,
     showShop: false,
     cosmetics: initialCosmeticsState(),
+    tutorial: {
+      tutorialCompleted: false,
+      showTutorial: false,
+      currentStep: 'welcome',
+    },
   };
 
   const permanentData = loadPermanentData();
@@ -141,6 +153,7 @@ const loadInitialState = (): GameState => {
     baseState.elementEssence = permanentData.elementEssence ?? 0;
     baseState.player.comboLevels = permanentData.comboLevels ?? baseState.player.comboLevels;
     baseState.dailyQuests = permanentData.dailyQuests ?? baseState.dailyQuests;
+    baseState.tutorial.tutorialCompleted = permanentData.tutorialCompleted ?? false;
     if (permanentData.cosmetics) {
       baseState.cosmetics = {
         ...initialCosmeticsState(),
@@ -169,6 +182,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       comboLevels: state.player.comboLevels,
       dailyQuests: state.dailyQuests,
       cosmetics: state.cosmetics,
+      tutorialCompleted: state.tutorial.tutorialCompleted,
     });
 
     if (state.phase === 'battle' && state.enemy) {
@@ -1798,5 +1812,90 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const avatarId = get().cosmetics?.equippedAvatar;
     if (!avatarId) return null;
     return SHOP_AVATARS.find((a) => a.id === avatarId) || null;
+  },
+
+  startTutorial: () => {
+    set({
+      tutorial: {
+        tutorialCompleted: false,
+        showTutorial: true,
+        currentStep: 'welcome',
+      },
+    });
+  },
+
+  nextTutorialStep: () => {
+    const { tutorial } = get();
+    const steps: TutorialStep[] = ['welcome', 'cards', 'combo', 'release', 'status_effects', 'turn_based', 'hp_shield', 'complete'];
+    const currentIndex = steps.indexOf(tutorial.currentStep);
+    if (currentIndex < steps.length - 1) {
+      set({
+        tutorial: {
+          ...tutorial,
+          currentStep: steps[currentIndex + 1],
+        },
+      });
+    }
+  },
+
+  prevTutorialStep: () => {
+    const { tutorial } = get();
+    const steps: TutorialStep[] = ['welcome', 'cards', 'combo', 'release', 'status_effects', 'turn_based', 'hp_shield', 'complete'];
+    const currentIndex = steps.indexOf(tutorial.currentStep);
+    if (currentIndex > 0) {
+      set({
+        tutorial: {
+          ...tutorial,
+          currentStep: steps[currentIndex - 1],
+        },
+      });
+    }
+  },
+
+  setTutorialStep: (step: TutorialStep) => {
+    set((state) => ({
+      tutorial: {
+        ...state.tutorial,
+        currentStep: step,
+      },
+    }));
+  },
+
+  skipTutorial: () => {
+    set((state) => ({
+      tutorial: {
+        ...state.tutorial,
+        showTutorial: false,
+        tutorialCompleted: true,
+      },
+    }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: true,
+    });
+  },
+
+  completeTutorial: () => {
+    set((state) => ({
+      tutorial: {
+        ...state.tutorial,
+        showTutorial: false,
+        tutorialCompleted: true,
+      },
+    }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: true,
+    });
+  },
+
+  isTutorialCompleted: (): boolean => {
+    return get().tutorial.tutorialCompleted;
   },
 }));
