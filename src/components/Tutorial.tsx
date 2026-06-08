@@ -7,7 +7,7 @@ interface TutorialContent {
   title: string;
   description: string;
   tips?: string[];
-  highlightArea?: 'hand' | 'combo_preview' | 'release_button' | 'enemy' | 'player' | 'none';
+  highlightArea?: 'hand' | 'combo_preview' | 'release_button' | 'enemy' | 'player' | 'status_effects' | 'none';
   position: 'top' | 'center' | 'bottom';
   icon?: string;
 }
@@ -64,7 +64,7 @@ const tutorialContents: Record<TutorialStep, TutorialContent> = {
   },
   status_effects: {
     title: '状态效果说明',
-    description: '组合技会附带各种状态效果，善用它们可以大幅提升战斗效率！',
+    description: '组合技会附带各种状态效果，善用它们可以大幅提升战斗效率！状态效果会显示在角色头像下方。',
     tips: [
       '🔥 灼烧：每回合造成持续伤害',
       '❄️ 冻结：使敌人无法行动',
@@ -91,7 +91,7 @@ const tutorialContents: Record<TutorialStep, TutorialContent> = {
   },
   hp_shield: {
     title: '生命值与护盾',
-    description: '将敌人的生命值降为0即可获胜！护盾可以吸收伤害，每回合开始时护盾会重置。',
+    description: '将敌人的生命值降为0即可获胜！护盾可以吸收伤害，玩家护盾每回合开始时会重置。',
     tips: [
       '红色条是生命值，归零则失败',
       '护盾会优先吸收伤害',
@@ -143,59 +143,64 @@ export default function Tutorial() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
+    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
       {/* 遮罩层 */}
       <div className="absolute inset-0 bg-black/70 pointer-events-auto" />
 
-      {/* 高亮区域 */}
+      {/* 高亮区域 - 使用inset-0确保定位正确 */}
       {currentContent.highlightArea !== 'none' && (
-        <div className="absolute pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none">
           {currentContent.highlightArea === 'hand' && (
-            <div className="absolute bottom-0 left-0 right-0 h-72 border-2 border-amber-400/50 rounded-t-3xl animate-pulse">
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-400/10 to-transparent rounded-t-3xl" />
+            <div className="absolute bottom-0 left-0 right-0 h-80 border-2 border-amber-400/80 rounded-t-3xl animate-pulse z-10">
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-400/20 to-transparent rounded-t-3xl" />
+              <div className="absolute -inset-1 bg-amber-400/30 rounded-t-3xl blur-md -z-10" />
             </div>
           )}
           {currentContent.highlightArea === 'combo_preview' && (
-            <div className="absolute bottom-80 left-1/2 -translate-x-1/2 w-96 h-20 border-2 border-amber-400/50 rounded-full animate-pulse">
-              <div className="absolute inset-0 bg-amber-400/10 rounded-full" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-[420px] h-24 border-2 border-amber-400/80 rounded-full animate-pulse z-10" style={{ bottom: '20rem' }}>
+              <div className="absolute inset-0 bg-amber-400/20 rounded-full" />
+              <div className="absolute -inset-1 bg-amber-400/30 rounded-full blur-md -z-10" />
             </div>
           )}
           {currentContent.highlightArea === 'release_button' && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 h-14 border-2 border-amber-400/50 rounded-xl animate-pulse">
-              <div className="absolute inset-0 bg-amber-400/10 rounded-xl" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-80 h-16 border-2 border-amber-400/80 rounded-xl animate-pulse z-10" style={{ bottom: '3rem' }}>
+              <div className="absolute inset-0 bg-amber-400/20 rounded-xl" />
+              <div className="absolute -inset-1 bg-amber-400/30 rounded-xl blur-md -z-10" />
             </div>
           )}
           {currentContent.highlightArea === 'enemy' && (
-            <div className="absolute top-24 left-1/2 -translate-x-1/2 w-80 h-40 border-2 border-amber-400/50 rounded-2xl animate-pulse">
-              <div className="absolute inset-0 bg-amber-400/10 rounded-2xl" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-96 h-44 border-2 border-amber-400/80 rounded-2xl animate-pulse z-10" style={{ top: '6rem' }}>
+              <div className="absolute inset-0 bg-amber-400/15 rounded-2xl" />
+              <div className="absolute -inset-1 bg-amber-400/25 rounded-2xl blur-md -z-10" />
             </div>
           )}
           {currentContent.highlightArea === 'player' && (
-            <div className="absolute bottom-96 left-1/2 -translate-x-1/2 w-80 h-40 border-2 border-amber-400/50 rounded-2xl animate-pulse">
-              <div className="absolute inset-0 bg-amber-400/10 rounded-2xl" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-96 h-44 border-2 border-amber-400/80 rounded-2xl animate-pulse z-10" style={{ bottom: '22rem' }}>
+              <div className="absolute inset-0 bg-amber-400/15 rounded-2xl" />
+              <div className="absolute -inset-1 bg-amber-400/25 rounded-2xl blur-md -z-10" />
             </div>
           )}
         </div>
       )}
 
-      {/* 教程弹窗 */}
+      {/* 教程弹窗 - 使用更安全的定位防止被截断 */}
       <div className={cn(
-        'absolute left-1/2 -translate-x-1/2 pointer-events-auto',
-        currentContent.position === 'top' && 'top-24',
+        'absolute left-1/2 -translate-x-1/2 pointer-events-auto z-20',
+        currentContent.position === 'top' && 'top-20',
         currentContent.position === 'center' && 'top-1/2 -translate-y-1/2',
-        currentContent.position === 'bottom' && 'bottom-96',
+        currentContent.position === 'bottom' && 'top-1/2 -translate-y-1/2',
       )}>
         <div className="relative w-[480px] max-w-[90vw]">
           {/* 装饰光效 */}
           <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/30 via-purple-500/30 to-amber-500/30 rounded-2xl blur-lg" />
           
           {/* 主卡片 */}
-          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-amber-500/30 shadow-2xl overflow-hidden">
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-amber-500/30 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
             {/* 顶部装饰条 */}
-            <div className="h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+            <div className="h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 flex-shrink-0" />
             
             {/* 内容区 */}
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto flex-1">
               {/* 标题 */}
               <div className="flex items-center gap-3 mb-4">
                 {currentContent.icon && (
