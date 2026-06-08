@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity } from '@/types/game';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity, DuoScreenLayout } from '@/types/game';
 import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES, createCardByRarityWeight } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
@@ -96,6 +96,15 @@ interface GameActions {
   addCardToCollection: (card: Card) => void;
   getBattleCardReward: () => Card | null;
   selectMyCard: (cardId: string) => void;
+  startDuo: (layout?: DuoScreenLayout) => void;
+  duoSelectCard: (playerNum: 1 | 2, card: Card) => void;
+  duoDeselectCard: (playerNum: 1 | 2, cardId: string) => void;
+  duoPlaySelectedCards: (playerNum: 1 | 2) => void;
+  duoNextTurn: () => void;
+  duoIsComboOnCooldown: (playerNum: 1 | 2, comboId: string) => boolean;
+  duoGetComboCooldown: (playerNum: 1 | 2, comboId: string) => number;
+  duoGetCurrentComboLevel: (playerNum: 1 | 2, comboId: string) => number;
+  setDuoLayout: (layout: DuoScreenLayout) => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -166,6 +175,11 @@ const loadInitialState = (): GameState => {
     },
     myCardUsedIds: [],
     levelCardReward: null,
+    player2: null,
+    currentDuoPlayer: 1,
+    duoLayout: 'horizontal',
+    player2Shaking: false,
+    duoWinner: null,
   };
 
   const permanentData = loadPermanentData();
@@ -2378,5 +2392,380 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       : { common: 30, rare: 30, epic: 25, legendary: 15 };
 
     return createCardByRarityWeight(rarityWeights);
+  },
+
+  startDuo: (layout: DuoScreenLayout = 'horizontal') => {
+    const player1 = initialPlayerState();
+    const player2State = initialPlayerState();
+    
+    player1.name = '玩家 1';
+    player2State.name = '玩家 2';
+    
+    clearBattleSave();
+    
+    set({
+      phase: 'battle',
+      mode: 'duo',
+      difficulty: 'normal',
+      turn: 1,
+      player: player1,
+      player2: player2State,
+      enemy: null,
+      comboHistory: [],
+      streak: 0,
+      score: 0,
+      isAnimating: false,
+      currentCombo: null,
+      showComboEffect: false,
+      wave: 1,
+      level: 1,
+      maxLevel: 1,
+      floatingTexts: [],
+      playerShaking: false,
+      player2Shaking: false,
+      currentDuoPlayer: 1,
+      duoLayout: layout,
+      duoWinner: null,
+      showLevelComplete: false,
+      levelCardReward: null,
+    });
+  },
+
+  setDuoLayout: (layout: DuoScreenLayout) => {
+    set({ duoLayout: layout });
+  },
+
+  duoSelectCard: (playerNum: 1 | 2, card: Card) => {
+    const { isAnimating, player2, duoWinner } = get();
+    if (isAnimating) return;
+    if (duoWinner) return;
+    
+    const targetPlayer = playerNum === 1 ? get().player : player2;
+    if (!targetPlayer) return;
+    
+    if (targetPlayer.selectedCards.length >= 2) return;
+    if (targetPlayer.selectedCards.find((c) => c.id === card.id)) return;
+    
+    if (playerNum === 1) {
+      set((state) => ({
+        player: {
+          ...state.player,
+          selectedCards: [...state.player.selectedCards, card],
+        },
+      }));
+    } else {
+      set((state) => ({
+        player2: state.player2 ? {
+          ...state.player2,
+          selectedCards: [...state.player2.selectedCards, card],
+        } : state.player2,
+      }));
+    }
+  },
+
+  duoDeselectCard: (playerNum: 1 | 2, cardId: string) => {
+    const { isAnimating, duoWinner } = get();
+    if (isAnimating) return;
+    if (duoWinner) return;
+    
+    if (playerNum === 1) {
+      set((state) => ({
+        player: {
+          ...state.player,
+          selectedCards: state.player.selectedCards.filter((c) => c.id !== cardId),
+        },
+      }));
+    } else {
+      set((state) => ({
+        player2: state.player2 ? {
+          ...state.player2,
+          selectedCards: state.player2.selectedCards.filter((c) => c.id !== cardId),
+        } : state.player2,
+      }));
+    }
+  },
+
+  duoPlaySelectedCards: (playerNum: 1 | 2) => {
+    const state = get();
+    const { isAnimating, player2, currentDuoPlayer, duoWinner } = state;
+    
+    if (isAnimating || duoWinner) return;
+    if (currentDuoPlayer !== playerNum) return;
+    
+    const attacker = playerNum === 1 ? state.player : player2;
+    const defender = playerNum === 1 ? player2 : state.player;
+    
+    if (!attacker || !defender) return;
+    if (attacker.selectedCards.length !== 2) return;
+
+    const [card1, card2] = attacker.selectedCards;
+    const combo = findCombo(card1.element, card2.element);
+    if (!combo) return;
+
+    if (get().duoIsComboOnCooldown(playerNum, combo.id)) return;
+
+    const level = get().duoGetCurrentComboLevel(playerNum, combo.id);
+    const effectiveCombo = getComboWithLevel(combo, level);
+
+    set({ isAnimating: true, currentCombo: effectiveCombo, showComboEffect: true });
+
+    const newAttackerHand = attacker.hand.filter((c) => c.id !== card1.id && c.id !== card2.id);
+    const newAttackerDeck = [...attacker.deck];
+
+    setTimeout(() => {
+      const s = get();
+      const currentDefender = playerNum === 1 ? s.player2 : s.player;
+      const currentAttacker = playerNum === 1 ? s.player : s.player2;
+      
+      if (!currentDefender || !currentAttacker) return;
+
+      let damage = effectiveCombo.damage;
+      const newDefenderStatusEffects = [...currentDefender.statusEffects];
+      const newAttackerStatusEffects = [...currentAttacker.statusEffects];
+
+      if (effectiveCombo.effect && effectiveCombo.effectValue && effectiveCombo.effectDuration !== undefined) {
+        const debuffEffects = ['burn', 'poison', 'freeze', 'stun', 'weakness'] as const;
+        if (debuffEffects.includes(effectiveCombo.effect as typeof debuffEffects[number])) {
+          const existingIndex = newDefenderStatusEffects.findIndex((e) => e.type === effectiveCombo.effect);
+          if (existingIndex >= 0) {
+            newDefenderStatusEffects[existingIndex] = {
+              ...newDefenderStatusEffects[existingIndex],
+              value: newDefenderStatusEffects[existingIndex].value + (effectiveCombo.effectValue || 0),
+              duration: Math.max(newDefenderStatusEffects[existingIndex].duration, effectiveCombo.effectDuration || 0),
+            };
+          } else {
+            newDefenderStatusEffects.push({
+              type: effectiveCombo.effect,
+              value: effectiveCombo.effectValue,
+              duration: effectiveCombo.effectDuration,
+            });
+          }
+        }
+
+        const buffEffects = ['thorns', 'strength'] as const;
+        if (buffEffects.includes(effectiveCombo.effect as typeof buffEffects[number]) && effectiveCombo.effectDuration > 0) {
+          const existingIndex = newAttackerStatusEffects.findIndex((e) => e.type === effectiveCombo.effect);
+          if (existingIndex >= 0) {
+            newAttackerStatusEffects[existingIndex] = {
+              ...newAttackerStatusEffects[existingIndex],
+              value: newAttackerStatusEffects[existingIndex].value + (effectiveCombo.effectValue || 0),
+              duration: Math.max(newAttackerStatusEffects[existingIndex].duration, effectiveCombo.effectDuration || 0),
+            };
+          } else {
+            newAttackerStatusEffects.push({
+              type: effectiveCombo.effect,
+              value: effectiveCombo.effectValue,
+              duration: effectiveCombo.effectDuration,
+            });
+          }
+        }
+      }
+
+      let newDefenderHp = currentDefender.hp;
+      let newDefenderShield = currentDefender.shield;
+      let actualDamageDealt = 0;
+
+      if (damage > 0) {
+        if (newDefenderShield >= damage) {
+          newDefenderShield -= damage;
+          actualDamageDealt = damage;
+          damage = 0;
+        } else {
+          const beforeDamage = damage;
+          damage -= newDefenderShield;
+          newDefenderShield = 0;
+          newDefenderHp -= damage;
+          actualDamageDealt = beforeDamage;
+        }
+      }
+
+      const defenderShakingKey = playerNum === 1 ? 'player2Shaking' : 'playerShaking';
+      set({ [defenderShakingKey]: true } as Partial<GameState>);
+      setTimeout(() => set({ [defenderShakingKey]: false } as Partial<GameState>), 500);
+
+      let newAttackerHp = currentAttacker.hp;
+      let newAttackerShield = currentAttacker.shield;
+      let cardsToDraw = 0;
+
+      if (effectiveCombo.effect === 'heal' && effectiveCombo.effectValue) {
+        newAttackerHp = Math.min(currentAttacker.maxHp, newAttackerHp + effectiveCombo.effectValue);
+      }
+      if (effectiveCombo.effect === 'shield' && effectiveCombo.effectValue) {
+        newAttackerShield += effectiveCombo.effectValue;
+      }
+      if (effectiveCombo.effect === 'draw' && effectiveCombo.effectValue) {
+        cardsToDraw = effectiveCombo.effectValue;
+      }
+      if (effectiveCombo.effect === 'lifesteal' && effectiveCombo.effectValue) {
+        const healAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
+        newAttackerHp = Math.min(currentAttacker.maxHp, newAttackerHp + healAmount);
+      }
+      if (effectiveCombo.effect === 'absorb' && effectiveCombo.effectValue) {
+        const absorbAmount = Math.min(effectiveCombo.effectValue, actualDamageDealt);
+        newAttackerShield += absorbAmount;
+      }
+
+      const finalDeck = [...newAttackerDeck];
+      const finalHand = [...newAttackerHand];
+      for (let i = 0; i < cardsToDraw && finalDeck.length > 0; i++) {
+        finalHand.push(finalDeck.shift()!);
+      }
+
+      const isDefenderDead = newDefenderHp <= 0;
+
+      const newCooldowns = [...currentAttacker.comboCooldowns];
+      const existingCooldownIndex = newCooldowns.findIndex((c) => c.comboId === combo.id);
+      if (existingCooldownIndex >= 0) {
+        newCooldowns[existingCooldownIndex] = {
+          ...newCooldowns[existingCooldownIndex],
+          remaining: combo.cooldown,
+        };
+      } else {
+        newCooldowns.push({ comboId: combo.id, remaining: combo.cooldown });
+      }
+
+      if (playerNum === 1) {
+        set((s) => ({
+          player: {
+            ...s.player,
+            hp: newAttackerHp,
+            shield: newAttackerShield,
+            hand: finalHand,
+            deck: finalDeck,
+            selectedCards: [],
+            statusEffects: newAttackerStatusEffects,
+            comboCooldowns: newCooldowns,
+          },
+          player2: s.player2 ? {
+            ...s.player2,
+            hp: Math.max(0, newDefenderHp),
+            shield: newDefenderShield,
+            statusEffects: newDefenderStatusEffects,
+          } : s.player2,
+          isAnimating: false,
+          showComboEffect: false,
+          comboHistory: [...s.comboHistory, combo],
+        }));
+      } else {
+        set((s) => ({
+          player2: s.player2 ? {
+            ...s.player2,
+            hp: newAttackerHp,
+            shield: newAttackerShield,
+            hand: finalHand,
+            deck: finalDeck,
+            selectedCards: [],
+            statusEffects: newAttackerStatusEffects,
+            comboCooldowns: newCooldowns,
+          } : s.player2,
+          player: {
+            ...s.player,
+            hp: Math.max(0, newDefenderHp),
+            shield: newDefenderShield,
+            statusEffects: newDefenderStatusEffects,
+          },
+          isAnimating: false,
+          showComboEffect: false,
+          comboHistory: [...s.comboHistory, combo],
+        }));
+      }
+
+      if (isDefenderDead) {
+        set({ duoWinner: playerNum, phase: 'victory' });
+      } else {
+        setTimeout(() => {
+          get().duoNextTurn();
+        }, 800);
+      }
+    }, 1500);
+  },
+
+  duoNextTurn: () => {
+    const state = get();
+    const { currentDuoPlayer, player, player2 } = state;
+    
+    const nextPlayer = currentDuoPlayer === 1 ? 2 : 1;
+    const nextPlayerState = nextPlayer === 1 ? player : player2;
+    if (!nextPlayerState) return;
+
+    const newCooldowns = nextPlayerState.comboCooldowns
+      .map((cd) => ({
+        ...cd,
+        remaining: cd.remaining - 1,
+      }))
+      .filter((cd) => cd.remaining > 0);
+
+    if (nextPlayer === 1) {
+      set((s) => ({
+        currentDuoPlayer: 1,
+        turn: s.turn + 1,
+        player: {
+          ...s.player,
+          mana: s.player.maxMana,
+          shield: 0,
+          comboCooldowns: newCooldowns,
+        },
+      }));
+    } else {
+      set((s) => ({
+        currentDuoPlayer: 2,
+        turn: s.turn + 1,
+        player2: s.player2 ? {
+          ...s.player2,
+          mana: s.player2.maxMana,
+          shield: 0,
+          comboCooldowns: newCooldowns,
+        } : s.player2,
+      }));
+    }
+
+    setTimeout(() => {
+      const st = get();
+      const target = nextPlayer === 1 ? st.player : st.player2;
+      if (!target) return;
+      
+      const newHand = [...target.hand];
+      const newDeck = [...target.deck];
+      for (let i = 0; i < 2; i++) {
+        if (newDeck.length > 0 && newHand.length < 10) {
+          newHand.push(newDeck.shift()!);
+        } else if (newDeck.length === 0 && newHand.length < 10) {
+          const freshDeck = createDeck();
+          newHand.push(freshDeck.shift()!);
+          newDeck.push(...freshDeck);
+        }
+      }
+
+      if (nextPlayer === 1) {
+        set((s) => ({
+          player: { ...s.player, hand: newHand, deck: newDeck },
+        }));
+      } else {
+        set((s) => ({
+          player2: s.player2 ? { ...s.player2, hand: newHand, deck: newDeck } : s.player2,
+        }));
+      }
+    }, 300);
+  },
+
+  duoIsComboOnCooldown: (playerNum: 1 | 2, comboId: string) => {
+    return get().duoGetComboCooldown(playerNum, comboId) > 0;
+  },
+
+  duoGetComboCooldown: (playerNum: 1 | 2, comboId: string) => {
+    const { player, player2 } = get();
+    const target = playerNum === 1 ? player : player2;
+    if (!target) return 0;
+    
+    const cooldown = target.comboCooldowns.find((c) => c.comboId === comboId);
+    return cooldown ? cooldown.remaining : 0;
+  },
+
+  duoGetCurrentComboLevel: (playerNum: 1 | 2, comboId: string) => {
+    const { player, player2 } = get();
+    const target = playerNum === 1 ? player : player2;
+    if (!target) return 1;
+    
+    return getComboLevel(comboId, target.comboLevels);
   },
 }));

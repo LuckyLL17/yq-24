@@ -6,7 +6,7 @@ import type { GameMode, Difficulty } from '@/types/game';
 import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial, toggleMyCards, getCollectionStats } = useGameStore();
+  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial, toggleMyCards, getCollectionStats, startDuo } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
@@ -20,6 +20,7 @@ export default function MainMenu() {
     challenge: '挑战模式',
     endless: '无尽模式',
     quick: '快速对战',
+    duo: '双人对战',
   };
 
   const handleContinue = () => {
@@ -49,6 +50,15 @@ export default function MainMenu() {
       levels: '∞',
     },
     {
+      id: 'duo',
+      name: '双人对战',
+      description: '本地双人对战，两名玩家轮流操作',
+      icon: '👥',
+      color: 'from-emerald-500 via-teal-500 to-cyan-500',
+      glow: 'shadow-emerald-500/30',
+      levels: '本地',
+    },
+    {
       id: 'endless',
       name: '无尽模式',
       description: '无限波次敌人，看看你能坚持多久',
@@ -74,6 +84,10 @@ export default function MainMenu() {
   }));
 
   const handleModeSelect = (mode: GameMode) => {
+    if (mode === 'duo') {
+      startDuo();
+      return;
+    }
     setSelectedMode(mode);
   };
 

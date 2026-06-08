@@ -1,6 +1,7 @@
 import { useGameStore } from '@/store/gameStore';
 import MainMenu from '@/components/MainMenu';
 import BattleScene from '@/components/BattleScene';
+import DuoBattleScene from '@/components/DuoBattleScene';
 import GameOverScreen from '@/components/GameOverScreen';
 import LevelCompleteModal from '@/components/LevelCompleteModal';
 import DailyQuests from '@/components/DailyQuests';
@@ -9,7 +10,7 @@ import MyCards from '@/components/MyCards';
 import { useEffect } from 'react';
 
 export default function Home() {
-  const { phase, showLevelComplete, showShop, showMyCards, checkDailyRefresh, saveGame } = useGameStore();
+  const { phase, mode, showLevelComplete, showShop, showMyCards, checkDailyRefresh, saveGame } = useGameStore();
 
   useEffect(() => {
     checkDailyRefresh();
@@ -24,20 +25,28 @@ export default function Home() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveGame]);
 
+  const isDuoMode = mode === 'duo';
+
   return (
     <div className="min-h-screen w-full">
       {phase === 'menu' && <MainMenu />}
       
       {(phase === 'battle' || phase === 'victory' || phase === 'defeat') && (
         <>
-          <BattleScene />
-          {phase === 'victory' && <GameOverScreen type="victory" />}
-          {phase === 'defeat' && <GameOverScreen type="defeat" />}
-          {showLevelComplete && phase === 'battle' && <LevelCompleteModal />}
+          {isDuoMode ? (
+            <DuoBattleScene />
+          ) : (
+            <>
+              <BattleScene />
+              {phase === 'victory' && <GameOverScreen type="victory" />}
+              {phase === 'defeat' && <GameOverScreen type="defeat" />}
+              {showLevelComplete && phase === 'battle' && <LevelCompleteModal />}
+            </>
+          )}
         </>
       )}
 
-      <DailyQuests />
+      {!isDuoMode && <DailyQuests />}
       {showShop && <Shop />}
       {showMyCards && <MyCards />}
     </div>

@@ -186,7 +186,9 @@ export interface Enemy extends Combatant {
   intentPatternIndex?: number;
 }
 
-export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick';
+export type GameMode = 'classic' | 'challenge' | 'endless' | 'quick' | 'duo';
+
+export type DuoScreenLayout = 'horizontal' | 'vertical';
 export type GamePhase = 'menu' | 'battle' | 'victory' | 'defeat';
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'nightmare';
 
@@ -337,4 +339,9 @@ export interface GameState {
   tutorial: TutorialState;
   myCardUsedIds: string[];
   levelCardReward: Card | null;
+  player2: Player | null;
+  currentDuoPlayer: 1 | 2;
+  duoLayout: DuoScreenLayout;
+  player2Shaking: boolean;
+  duoWinner: 1 | 2 | null;
 }
