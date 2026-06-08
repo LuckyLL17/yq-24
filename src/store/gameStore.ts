@@ -95,6 +95,7 @@ interface GameActions {
   resetMyCardCooldowns: () => void;
   addCardToCollection: (card: Card) => void;
   getBattleCardReward: () => Card | null;
+  selectMyCard: (cardId: string) => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -511,6 +512,9 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         newCooldowns.push({ comboId: combo.id, remaining: combo.cooldown });
       }
 
+      const equippedMyCardIds = get().getEquippedMyCards().map(c => c.id);
+      const myCardIdsUsed = [card1, card2].filter(c => equippedMyCardIds.includes(c.id)).map(c => c.id);
+
       set((s) => ({
         enemy: {
           ...currentEnemy,
@@ -528,6 +532,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           statusEffects: newPlayerStatusEffects,
           comboCooldowns: newCooldowns,
         },
+        myCardUsedIds: [...s.myCardUsedIds, ...myCardIdsUsed],
         comboHistory: [...s.comboHistory, combo],
         isAnimating: false,
         showComboEffect: false,
@@ -2114,6 +2119,36 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       });
     });
     return templates;
+  },
+
+  selectMyCard: (cardId: string): void => {
+    const { player, isAnimating, enemy, showLevelComplete, myCardUsedIds } = get();
+    if (isAnimating) return;
+    if (!enemy || enemy.hp <= 0) return;
+    if (showLevelComplete) return;
+    if (myCardUsedIds.includes(cardId)) return;
+
+    const collectedCard = get().getEquippedMyCards().find(c => c.id === cardId);
+    if (!collectedCard) return;
+
+    const isSelected = player.selectedCards.find((c) => c.id === cardId);
+
+    if (isSelected) {
+      set((state) => ({
+        player: {
+          ...state.player,
+          selectedCards: state.player.selectedCards.filter((c) => c.id !== cardId),
+        },
+      }));
+    } else {
+      if (player.selectedCards.length >= 2) return;
+      set((state) => ({
+        player: {
+          ...state.player,
+          selectedCards: [...state.player.selectedCards, collectedCard as unknown as Card],
+        },
+      }));
+    }
   },
 
   equipMyCard: (cardId: string): boolean => {

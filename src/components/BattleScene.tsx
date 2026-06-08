@@ -41,7 +41,7 @@ export default function BattleScene() {
     tutorial,
     startTutorial,
     getEquippedMyCards,
-    useMyCard,
+    selectMyCard,
     isMyCardOnCooldown,
   } = useGameStore();
 
@@ -235,17 +235,19 @@ export default function BattleScene() {
             <div className="flex flex-col gap-2">
               {getEquippedMyCards().map((card) => {
                 const onCooldown = isMyCardOnCooldown(card.id);
+                const isSelected = selectedCards.some(c => c.id === card.id);
                 return (
                   <div
                     key={card.id}
                     className={cn(
                       'relative transition-all duration-300 cursor-pointer',
                       onCooldown ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:scale-110 hover:-translate-x-1',
+                      isSelected ? 'scale-110 -translate-x-1' : '',
                       isAnimating ? 'pointer-events-none' : ''
                     )}
                     onClick={() => {
                       if (!onCooldown && !isAnimating) {
-                        useMyCard(card.id);
+                        selectMyCard(card.id);
                       }
                     }}
                   >
@@ -253,15 +255,16 @@ export default function BattleScene() {
                       card={card}
                       size="sm"
                       disabled={onCooldown || isAnimating}
+                      isSelected={isSelected}
                     />
                     {onCooldown && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
                         <span className="text-2xl">⏳</span>
                       </div>
                     )}
-                    {!onCooldown && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow-lg">
-                        ✓
+                    {isSelected && !onCooldown && (
+                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shadow-lg border-2 border-white/30 animate-pulse">
+                        {selectedCards.findIndex(c => c.id === card.id) + 1}
                       </div>
                     )}
                   </div>
