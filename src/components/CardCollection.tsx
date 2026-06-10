@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { ELEMENTS, RARITY_NAMES } from '@/data/gameData';
+import { ELEMENTS, RARITY_NAMES, RARITY_DESCRIPTIONS, SKILL_TYPE_NAMES, SKILL_TYPE_DESCRIPTIONS, COMBOS, CATEGORY_NAMES, CATEGORY_COLORS } from '@/data/gameData';
 import { cn } from '@/lib/utils';
-import type { Rarity, ElementType, CollectedCard } from '@/types/game';
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import type { Rarity, ElementType, CollectedCard, ComboSkill } from '@/types/game';
+import { X, ChevronLeft, ChevronRight, Sparkles, Zap, Shield, Heart, Sword, Info } from 'lucide-react';
 
 interface CardTemplate {
   element: ElementType;
@@ -308,33 +308,51 @@ export default function CardCollection() {
 
         {selectedCard && (
           <div
-            className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
             onClick={closeDetail}
           >
             <div
-              className="relative animate-zoom-in"
+              className="relative w-full max-w-5xl max-h-[88vh] animate-zoom-in overflow-hidden"
               onClick={(e) => e.stopPropagation()}
-              style={{ perspective: '1000px' }}
             >
               <button
                 onClick={closeDetail}
-                className="absolute -top-4 -right-4 z-10 w-10 h-10 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white/70 hover:text-white transition-all flex items-center justify-center border border-white/20"
+                className="absolute -top-2 -right-2 z-50 w-10 h-10 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white/70 hover:text-white transition-all flex items-center justify-center border border-white/20 shadow-xl"
               >
                 <X size={20} />
               </button>
 
-              <div
-                className={cn(
-                  'transition-transform duration-500',
-                  isFlipping ? 'animate-card-flip' : ''
-                )}
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                <LargeCardDisplay
-                  card={selectedCard}
-                  owned={!!isCardOwned(selectedCard.name, selectedCard.element)}
-                  count={isCardOwned(selectedCard.name, selectedCard.element)?.count || 0}
-                />
+              <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl border-2 border-amber-500/30 shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+                  <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+                </div>
+
+                <div className="relative z-10 flex flex-col md:flex-row gap-6 p-6 md:p-8">
+                  <div className="flex-shrink-0 flex justify-center">
+                    <div
+                      className={cn(
+                        'transition-transform duration-500',
+                        isFlipping ? 'animate-card-flip' : ''
+                      )}
+                      style={{ transformStyle: 'preserve-3d' }}
+                    >
+                      <LargeCardDisplay
+                        card={selectedCard}
+                        owned={!!isCardOwned(selectedCard.name, selectedCard.element)}
+                        count={isCardOwned(selectedCard.name, selectedCard.element)?.count || 0}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 overflow-y-auto max-h-[70vh] md:max-h-[75vh] pr-2 custom-scrollbar">
+                    <CardDetailPanel
+                      card={selectedCard}
+                      owned={!!isCardOwned(selectedCard.name, selectedCard.element)}
+                      combos={getCardCombos(selectedCard.element)}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -822,6 +840,268 @@ function LargeCardDisplay({
           <div className="px-2.5 py-1 rounded-full bg-emerald-500/30 text-emerald-300 text-xs font-bold border border-emerald-400/30">
             持有 ×{count}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getCardCombos(element: ElementType): ComboSkill[] {
+  return COMBOS.filter((combo) =>
+    combo.elements.includes(element)
+  ).sort((a, b) => {
+    const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 };
+    return rarityOrder[a.rarity] - rarityOrder[b.rarity];
+  });
+}
+
+function CardDetailPanel({
+  card,
+  owned,
+  combos,
+}: {
+  card: CardTemplate;
+  owned: boolean;
+  combos: ComboSkill[];
+}) {
+  const element = ELEMENTS[card.element];
+
+  const rarityColors: Record<Rarity, string> = {
+    common: 'text-gray-400',
+    rare: 'text-blue-400',
+    epic: 'text-purple-400',
+    legendary: 'text-amber-400',
+  };
+
+  const rarityBgColors: Record<Rarity, string> = {
+    common: 'bg-gray-500/20 border-gray-500/30',
+    rare: 'bg-blue-500/20 border-blue-500/30',
+    epic: 'bg-purple-500/20 border-purple-500/30',
+    legendary: 'bg-amber-500/20 border-amber-500/30',
+  };
+
+  const rarityGlowColors: Record<Rarity, string> = {
+    common: 'shadow-gray-500/20',
+    rare: 'shadow-blue-500/30',
+    epic: 'shadow-purple-500/40',
+    legendary: 'shadow-amber-500/50',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="flex items-start gap-3 mb-3">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+            style={{
+              background: `linear-gradient(135deg, ${element.color}40, ${element.color}20)`,
+              border: `2px solid ${element.color}60`,
+              boxShadow: `0 0 20px ${element.color}30`,
+            }}
+          >
+            {owned ? element.icon : '❓'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2
+              className="text-2xl font-bold text-white mb-1"
+              style={{ fontFamily: "'Cinzel Decorative', serif" }}
+            >
+              {owned ? card.name : '???'}
+            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={cn(
+                'px-3 py-0.5 rounded-full text-xs font-bold border',
+                rarityColors[card.rarity],
+                rarityBgColors[card.rarity]
+              )}>
+                {RARITY_NAMES[card.rarity]}
+              </span>
+              <span
+                className="px-3 py-0.5 rounded-full text-xs font-semibold border border-white/20 text-white/70"
+                style={{ borderColor: `${element.color}50`, color: element.color }}
+              >
+                {element.name}元素
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-slate-800/50 rounded-xl p-3 border border-white/10 text-center">
+            <div className="text-3xl font-black text-amber-400 mb-1">
+              {card.power}
+            </div>
+            <div className="text-[10px] text-white/50 uppercase tracking-wider">威力</div>
+          </div>
+          <div className="bg-slate-800/50 rounded-xl p-3 border border-white/10 text-center">
+            <div className="text-3xl mb-1">
+              {element.icon}
+            </div>
+            <div className="text-[10px] text-white/50 uppercase tracking-wider">元素</div>
+          </div>
+          <div className="bg-slate-800/50 rounded-xl p-3 border border-white/10 text-center">
+            <div className="text-3xl mb-1">
+              {card.rarity === 'legendary' ? '👑' : card.rarity === 'epic' ? '💎' : card.rarity === 'rare' ? '💠' : '⚪'}
+            </div>
+            <div className="text-[10px] text-white/50 uppercase tracking-wider">稀有度</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/40 rounded-xl p-4 border border-white/10">
+        <div className="flex items-center gap-2 mb-2">
+          <Info size={16} className="text-amber-400" />
+          <h3 className="text-sm font-bold text-white/90">卡牌描述</h3>
+        </div>
+        <p className="text-white/70 text-sm leading-relaxed">
+          {owned ? card.description : '这张卡牌尚未解锁，继续探索和收集来解锁它吧！'}
+        </p>
+      </div>
+
+      <div className={cn(
+        'rounded-xl p-4 border',
+        rarityBgColors[card.rarity]
+      )}>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles size={16} className={rarityColors[card.rarity]} />
+          <h3 className={cn('text-sm font-bold', rarityColors[card.rarity])}>
+            {RARITY_NAMES[card.rarity]}卡牌
+          </h3>
+        </div>
+        <p className="text-white/60 text-sm leading-relaxed">
+          {RARITY_DESCRIPTIONS[card.rarity]}
+        </p>
+      </div>
+
+      {owned && card.skillType && (
+        <div className="bg-gradient-to-r from-slate-800/60 to-slate-800/40 rounded-xl p-4 border border-amber-500/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap size={16} className="text-amber-400" />
+            <h3 className="text-sm font-bold text-amber-300">特殊技能</h3>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/30 border border-amber-400/40 flex items-center justify-center flex-shrink-0">
+              <Sword size={24} className="text-amber-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-white mb-1">
+                {SKILL_TYPE_NAMES[card.skillType] || card.skillType}
+              </div>
+              <p className="text-white/60 text-xs leading-relaxed mb-2">
+                {SKILL_TYPE_DESCRIPTIONS[card.skillType] || ''}
+              </p>
+              {card.skillValue !== undefined && card.skillValue > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/30">
+                  <span className="text-amber-300 font-bold text-sm">{card.skillValue}</span>
+                  <span className="text-amber-200/70 text-xs">技能数值</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Zap size={16} className="text-purple-400" />
+          <h3 className="text-sm font-bold text-white/90">可组合技能</h3>
+          <span className="text-xs text-white/40">({combos.length}个)</span>
+        </div>
+        <div className="space-y-2">
+          {combos.map((combo) => {
+            const otherElement = combo.elements[0] === card.element
+              ? combo.elements[1]
+              : combo.elements[0];
+            const otherEl = ELEMENTS[otherElement];
+            const categoryName = CATEGORY_NAMES[combo.category] || combo.category;
+            const categoryColor = CATEGORY_COLORS[combo.category] || 'text-gray-400';
+
+            return (
+              <div
+                key={combo.id}
+                className={cn(
+                  'group relative rounded-xl p-3 border transition-all duration-300',
+                  'bg-slate-800/40 hover:bg-slate-800/70',
+                  'border-white/10 hover:border-white/20',
+                  owned && 'cursor-pointer',
+                  !owned && 'opacity-50'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${element.color}40, ${element.color}20)`,
+                        border: `1.5px solid ${element.color}60`,
+                      }}
+                    >
+                      {element.icon}
+                    </div>
+                    <span className="text-white/30 text-sm">+</span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${otherEl.color}40, ${otherEl.color}20)`,
+                        border: `1.5px solid ${otherEl.color}60`,
+                      }}
+                    >
+                      {otherEl.icon}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-bold text-white text-sm truncate">
+                        {owned ? combo.name : '???'}
+                      </span>
+                      <span className={cn(
+                        'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                        rarityColors[combo.rarity],
+                        `bg-${combo.rarity === 'legendary' ? 'amber' : combo.rarity === 'epic' ? 'purple' : combo.rarity === 'rare' ? 'blue' : 'gray'}-500/20`
+                      )}
+                        style={{
+                          backgroundColor: combo.rarity === 'legendary' ? 'rgba(251, 191, 36, 0.2)' :
+                            combo.rarity === 'epic' ? 'rgba(168, 85, 247, 0.2)' :
+                            combo.rarity === 'rare' ? 'rgba(59, 130, 246, 0.2)' :
+                            'rgba(156, 163, 175, 0.2)'
+                        }}
+                      >
+                        {RARITY_NAMES[combo.rarity]}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={cn('font-medium', categoryColor)}>
+                        {categoryName}
+                      </span>
+                      <span className="text-white/40">•</span>
+                      <span className="text-red-400 font-medium">{combo.damage}伤害</span>
+                    </div>
+                  </div>
+
+                  <ChevronRight size={16} className="text-white/30 flex-shrink-0" />
+                </div>
+
+                {owned && (
+                  <p className="mt-2 text-xs text-white/50 leading-relaxed pl-10">
+                    {combo.description}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {!owned && (
+        <div className="bg-gradient-to-r from-slate-800/60 to-slate-800/40 rounded-xl p-4 border border-white/10 text-center">
+          <div className="text-4xl mb-2">🔒</div>
+          <p className="text-white/60 text-sm">
+            这张卡牌尚未加入你的收藏
+          </p>
+          <p className="text-white/40 text-xs mt-1">
+            通过战斗、商店卡包或合成来获取它吧！
+          </p>
         </div>
       )}
     </div>

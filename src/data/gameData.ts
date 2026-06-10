@@ -1663,3 +1663,30 @@ export const RARITY_NAMES: Record<Rarity, string> = {
   epic: '史诗',
   legendary: '传说',
 };
+
+export const RARITY_DESCRIPTIONS: Record<Rarity, string> = {
+  common: '最常见的卡牌，基础威力较低，容易获取。是构建卡组的基石。',
+  rare: '稀有的卡牌，威力不俗，具备一定的特殊效果。值得收集和培养。',
+  epic: '史诗级卡牌，拥有强大的力量和独特的技能。是卡组中的核心战力。',
+  legendary: '传说级卡牌，极其稀有，拥有毁天灭地的力量。每一张都是传奇的象征。',
+};
+
+export const SKILL_TYPE_NAMES: Record<string, string> = {
+  heavy_damage: '重击',
+  damage_heal: '伤害治愈',
+  damage_freeze: '伤害冰冻',
+  damage_shield: '伤害护盾',
+  multi_hit: '连击',
+  big_heal: '大治愈',
+  life_drain: '生命汲取',
+};
+
+export const SKILL_TYPE_DESCRIPTIONS: Record<string, string> = {
+  heavy_damage: '造成巨额伤害的强力攻击技能',
+  damage_heal: '造成伤害的同时恢复自身生命',
+  damage_freeze: '造成伤害并有几率冻结敌人',
+  damage_shield: '造成伤害并获得护盾保护',
+  multi_hit: '连续多次攻击敌人',
+  big_heal: '大量恢复生命值的治愈技能',
+  life_drain: '吸取敌人生命来恢复自身',
+};
