@@ -288,6 +288,19 @@ export interface ShopAvatar {
 
 export type ShopItem = CardPack | CardBorder | ShopAvatar;
 
+export interface CardTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface CardNote {
+  cardId: string;
+  content: string;
+  tags: string[];
+  updatedAt: number;
+}
+
 export interface CollectedCard {
   id: string;
   element: ElementType;
@@ -309,6 +322,8 @@ export interface PlayerCosmetics {
   openedCardPacks: string[];
   collection: CollectedCard[];
   equippedMyCards: string[];
+  cardTags: CardTag[];
+  cardNotes: CardNote[];
 }
 
 export type TutorialStep = 

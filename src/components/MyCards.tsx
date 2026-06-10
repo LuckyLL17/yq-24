@@ -3,7 +3,8 @@ import { useGameStore } from '@/store/gameStore';
 import { ELEMENTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 import type { Rarity, ElementType, CollectedCard } from '@/types/game';
-import { X, Sparkles, Hammer, Package, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Sparkles, Hammer, Package, Trash2, ChevronDown, ChevronUp, StickyNote, Tag } from 'lucide-react';
+import CardNoteModal from './CardNoteModal';
 
 type TabType = 'collection' | 'disassemble' | 'synthesize';
 
@@ -22,18 +23,24 @@ export default function MyCards() {
     equipMyCard,
     unequipMyCard,
     getEquippedMyCards,
+    getCardTags,
+    getCardNote,
+    getCardsByTag,
   } = useGameStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('collection');
   const [rarityFilter, setRarityFilter] = useState<'all' | Rarity>('all');
   const [elementFilter, setElementFilter] = useState<'all' | ElementType>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
   const [message, setMessage] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<CollectedCard | null>(null);
+  const [showNoteModal, setShowNoteModal] = useState<CollectedCard | null>(null);
   const [showSynthesizeConfirm, setShowSynthesizeConfirm] = useState<{ element: ElementType; name: string; rarity: Rarity } | null>(null);
 
   const collection = getCollection();
   const collectionStats = getCollectionStats();
   const allTemplates = getAllCardTemplates();
+  const cardTags = getCardTags();
 
   const showMessage = (msg: string) => {
     setMessage(msg);
@@ -48,6 +55,10 @@ export default function MyCards() {
     if (elementFilter !== 'all') {
       result = result.filter((c) => c.element === elementFilter);
     }
+    if (tagFilter !== 'all') {
+      const taggedCardIds = getCardsByTag(tagFilter).map((c) => c.id);
+      result = result.filter((c) => taggedCardIds.includes(c.id));
+    }
     return result.sort((a, b) => {
       const rarityOrder = { legendary: 0, epic: 1, rare: 2, common: 3 };
       if (rarityOrder[a.rarity] !== rarityOrder[b.rarity]) {
@@ -55,7 +66,7 @@ export default function MyCards() {
       }
       return a.element.localeCompare(b.element);
     });
-  }, [collection, rarityFilter, elementFilter]);
+  }, [collection, rarityFilter, elementFilter, tagFilter, getCardsByTag]);
 
   const duplicateCards = useMemo(() => {
     return collection.filter((c) => c.count > 1);
@@ -281,6 +292,47 @@ export default function MyCards() {
                 </button>
               ))}
             </div>
+
+            {activeTab === 'collection' && cardTags.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Tag size={14} className="text-white/40" />
+                <div className="flex gap-1 flex-wrap">
+                  <button
+                    onClick={() => setTagFilter('all')}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-semibold transition-all',
+                      tagFilter === 'all'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-700/50 text-white/50 hover:bg-slate-600/50'
+                    )}
+                  >
+                    全部标签
+                  </button>
+                  {cardTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => setTagFilter(tag.id)}
+                      className={cn(
+                        'px-2.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1',
+                        tagFilter === tag.id
+                          ? 'text-white ring-2 ring-offset-1 ring-offset-slate-900'
+                          : 'bg-white/5 text-white/60 hover:bg-white/10'
+                      )}
+                      style={{
+                        backgroundColor: tagFilter === tag.id ? tag.color : undefined,
+                        ringColor: tagFilter === tag.id ? tag.color : undefined,
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -293,6 +345,9 @@ export default function MyCards() {
                 onEquip={handleEquipCard}
                 onUnequip={handleUnequipCard}
                 isCardEquipped={isCardEquipped}
+                onNote={(card) => setShowNoteModal(card)}
+                getCardNote={getCardNote}
+                cardTags={cardTags}
               />
             )}
 
@@ -359,6 +414,13 @@ export default function MyCards() {
             </div>
           </div>
         )}
+
+        {showNoteModal && (
+          <CardNoteModal
+            card={showNoteModal}
+            onClose={() => setShowNoteModal(null)}
+          />
+        )}
       </div>
     </div>
   );
@@ -406,6 +468,9 @@ function CollectionView({
   onEquip,
   onUnequip,
   isCardEquipped,
+  onNote,
+  getCardNote,
+  cardTags,
 }: {
   cards: CollectedCard[];
   totalCards: number;
@@ -414,6 +479,9 @@ function CollectionView({
   onEquip: (cardId: string) => void;
   onUnequip: (cardId: string) => void;
   isCardEquipped: (cardId: string) => boolean;
+  onNote: (card: CollectedCard) => void;
+  getCardNote: (cardId: string) => ReturnType<typeof useGameStore.getState.getCardNote>;
+  cardTags: ReturnType<typeof useGameStore.getState.getCardTags>;
 }) {
   if (cards.length === 0) {
     return (
@@ -492,6 +560,9 @@ function CollectionView({
             isEquipped={isCardEquipped(card.id)}
             onEquip={() => onEquip(card.id)}
             onUnequip={() => onUnequip(card.id)}
+            onNote={() => onNote(card)}
+            note={getCardNote(card.id)}
+            cardTags={cardTags}
           />
         ))}
       </div>
@@ -638,13 +709,19 @@ function SynthesizeView({
   );
 }
 
-function CollectionCard({ card, isEquipped, onEquip, onUnequip }: { card: CollectedCard; isEquipped: boolean; onEquip: () => void; onUnequip: () => void }) {
+function CollectionCard({ card, isEquipped, onEquip, onUnequip, onNote, note, cardTags }: { card: CollectedCard; isEquipped: boolean; onEquip: () => void; onUnequip: () => void; onNote: () => void; note?: ReturnType<typeof useGameStore.getState.getCardNote>; cardTags: ReturnType<typeof useGameStore.getState.getCardTags>; }) {
   const rarityColors: Record<Rarity, string> = {
     common: 'text-gray-400',
     rare: 'text-blue-400',
     epic: 'text-purple-400',
     legendary: 'text-amber-400',
   };
+
+  const hasNote = note && (note.content.trim() || note.tags.length > 0);
+  const noteTagNames = note?.tags
+    .map((tagId) => cardTags.find((t) => t.id === tagId))
+    .filter(Boolean)
+    .slice(0, 2);
 
   return (
     <div
@@ -660,6 +737,11 @@ function CollectionCard({ card, isEquipped, onEquip, onUnequip }: { card: Collec
           已装备
         </div>
       )}
+      {hasNote && (
+        <div className="absolute top-1 right-1 z-10">
+          <StickyNote size={14} className="text-amber-400 drop-shadow-lg" />
+        </div>
+      )}
       <div className="relative p-3 flex flex-col items-center text-center">
         <div className="text-3xl mb-2">{ELEMENTS[card.element].icon}</div>
         <h4 className="text-xs font-bold text-white mb-1 truncate w-full">{card.name}</h4>
@@ -673,22 +755,47 @@ function CollectionCard({ card, isEquipped, onEquip, onUnequip }: { card: Collec
           ⚔️ {card.power}
         </div>
 
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          {isEquipped ? (
-            <button
-              onClick={onUnequip}
-              className="px-2 py-1 rounded bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold transition-all"
-            >
-              卸下
-            </button>
-          ) : (
-            <button
-              onClick={onEquip}
-              className="px-2 py-1 rounded bg-emerald-500/80 hover:bg-emerald-500 text-white text-xs font-semibold transition-all"
-            >
-              装备
-            </button>
-          )}
+        {noteTagNames && noteTagNames.length > 0 && (
+          <div className="flex gap-1 mt-2 flex-wrap justify-center">
+            {noteTagNames.map((tag) => (
+              tag && (
+                <span
+                  key={tag.id}
+                  className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold text-white"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  {tag.name}
+                </span>
+              )
+            ))}
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+          <div className="flex gap-2">
+            {isEquipped ? (
+              <button
+                onClick={onUnequip}
+                className="px-2 py-1 rounded bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold transition-all"
+              >
+                卸下
+              </button>
+            ) : (
+              <button
+                onClick={onEquip}
+                className="px-2 py-1 rounded bg-emerald-500/80 hover:bg-emerald-500 text-white text-xs font-semibold transition-all"
+              >
+                装备
+              </button>
+            )}
+          </div>
+          <button
+            onClick={onNote}
+            className="px-2 py-1 rounded bg-amber-500/80 hover:bg-amber-500 text-white text-xs font-semibold transition-all flex items-center gap-1"
+          >
+            <StickyNote size={12} />
+            {hasNote ? '编辑备注' : '添加备注'}
+          </button>
         </div>
       </div>
     </div>

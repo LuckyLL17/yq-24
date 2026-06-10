@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity, DuoScreenLayout } from '@/types/game';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity, DuoScreenLayout, CardTag, CardNote } from '@/types/game';
 import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES, createCardByRarityWeight } from '@/data/gameData';
 import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
 
@@ -113,6 +113,15 @@ interface GameActions {
   addComboFloatingText: (comboCount: number, damageBonus: number) => void;
   showBattleRatingEffect: () => void;
   hideBattleRating: () => void;
+  getCardTags: () => CardTag[];
+  addCardTag: (name: string, color: string) => CardTag | null;
+  updateCardTag: (tagId: string, name: string, color: string) => boolean;
+  deleteCardTag: (tagId: string) => boolean;
+  getCardNote: (cardId: string) => CardNote | undefined;
+  getCardNotes: () => CardNote[];
+  saveCardNote: (cardId: string, content: string, tags: string[]) => CardNote | null;
+  deleteCardNote: (cardId: string) => boolean;
+  getCardsByTag: (tagId: string) => CollectedCard[];
 }
 
 const initialPlayerState = (): Player => {
@@ -145,6 +154,12 @@ const initialCosmeticsState = (): PlayerCosmetics => ({
   openedCardPacks: [],
   collection: [],
   equippedMyCards: [],
+  cardTags: [
+    { id: 'tag_default_1', name: '常用', color: '#10b981' },
+    { id: 'tag_default_2', name: '组合技', color: '#8b5cf6' },
+    { id: 'tag_default_3', name: '待研究', color: '#f59e0b' },
+  ],
+  cardNotes: [],
 });
 
 const loadInitialState = (): GameState => {
@@ -3136,5 +3151,154 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     if (!target) return 1;
     
     return getComboLevel(comboId, target.comboLevels);
+  },
+
+  getCardTags: () => {
+    return get().cosmetics.cardTags || [];
+  },
+
+  addCardTag: (name: string, color: string): CardTag | null => {
+    if (!name.trim()) return null;
+    const newTag: CardTag = {
+      id: `tag_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: name.trim(),
+      color,
+    };
+    set((state) => ({
+      cosmetics: {
+        ...state.cosmetics,
+        cardTags: [...state.cosmetics.cardTags, newTag],
+      },
+    }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+    return newTag;
+  },
+
+  updateCardTag: (tagId: string, name: string, color: string): boolean => {
+    const state = get();
+    const tagIndex = state.cosmetics.cardTags.findIndex((t) => t.id === tagId);
+    if (tagIndex === -1) return false;
+
+    set((s) => {
+      const newTags = [...s.cosmetics.cardTags];
+      newTags[tagIndex] = { ...newTags[tagIndex], name: name.trim(), color };
+      return {
+        cosmetics: {
+          ...s.cosmetics,
+          cardTags: newTags,
+        },
+      };
+    });
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+    return true;
+  },
+
+  deleteCardTag: (tagId: string): boolean => {
+    const state = get();
+    const tagExists = state.cosmetics.cardTags.some((t) => t.id === tagId);
+    if (!tagExists) return false;
+
+    set((s) => ({
+      cosmetics: {
+        ...s.cosmetics,
+        cardTags: s.cosmetics.cardTags.filter((t) => t.id !== tagId),
+        cardNotes: s.cosmetics.cardNotes.map((note) => ({
+          ...note,
+          tags: note.tags.filter((t) => t !== tagId),
+        })),
+      },
+    }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+    return true;
+  },
+
+  getCardNote: (cardId: string) => {
+    return get().cosmetics.cardNotes.find((n) => n.cardId === cardId);
+  },
+
+  getCardNotes: () => {
+    return get().cosmetics.cardNotes || [];
+  },
+
+  saveCardNote: (cardId: string, content: string, tags: string[]): CardNote | null => {
+    const state = get();
+    const existingIndex = state.cosmetics.cardNotes.findIndex((n) => n.cardId === cardId);
+
+    const newNote: CardNote = {
+      cardId,
+      content: content.trim(),
+      tags,
+      updatedAt: Date.now(),
+    };
+
+    set((s) => {
+      let newNotes = [...s.cosmetics.cardNotes];
+      if (existingIndex >= 0) {
+        newNotes[existingIndex] = newNote;
+      } else {
+        newNotes.push(newNote);
+      }
+      return {
+        cosmetics: {
+          ...s.cosmetics,
+          cardNotes: newNotes,
+        },
+      };
+    });
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+    return newNote;
+  },
+
+  deleteCardNote: (cardId: string): boolean => {
+    const state = get();
+    const noteExists = state.cosmetics.cardNotes.some((n) => n.cardId === cardId);
+    if (!noteExists) return false;
+
+    set((s) => ({
+      cosmetics: {
+        ...s.cosmetics,
+        cardNotes: s.cosmetics.cardNotes.filter((n) => n.cardId !== cardId),
+      },
+    }));
+    savePermanentData({
+      elementEssence: get().elementEssence,
+      comboLevels: get().player.comboLevels,
+      dailyQuests: get().dailyQuests,
+      cosmetics: get().cosmetics,
+      tutorialCompleted: get().tutorial.tutorialCompleted,
+    });
+    return true;
+  },
+
+  getCardsByTag: (tagId: string): CollectedCard[] => {
+    const state = get();
+    const noteCardIds = state.cosmetics.cardNotes
+      .filter((n) => n.tags.includes(tagId))
+      .map((n) => n.cardId);
+    return state.cosmetics.collection.filter((c) => noteCardIds.includes(c.id));
   },
 }));
