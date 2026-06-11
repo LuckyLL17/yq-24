@@ -12,6 +12,7 @@ interface ElementCardProps {
   disabled?: boolean;
   showDetails?: boolean;
   animationDelay?: number;
+  insufficientMana?: boolean;
 }
 
 const RARITY_NAMES: Record<string, string> = {
@@ -64,6 +65,7 @@ export default function ElementCard({
   disabled = false,
   showDetails = true,
   animationDelay = 0,
+  insufficientMana = false,
   useBorder,
 }: ElementCardProps & { useBorder?: CardBorder | null }) {
   const element = ELEMENTS[card.element];
@@ -113,7 +115,8 @@ export default function ElementCard({
         'relative cursor-pointer transition-all duration-300 transform group',
         sizeClasses[size],
         isSelected && 'scale-110 -translate-y-6 z-30',
-        !disabled && !isSelected && 'hover:scale-105 hover:-translate-y-3 hover:z-20',
+        !disabled && !isSelected && !insufficientMana && 'hover:scale-105 hover:-translate-y-3 hover:z-20',
+        insufficientMana && !isSelected && 'opacity-60 grayscale-[50%] cursor-not-allowed',
         disabled && 'opacity-50 cursor-not-allowed grayscale',
         card.rarity === 'legendary' && 'rarity-legendary',
         card.rarity === 'epic' && 'rarity-epic'
@@ -252,8 +255,40 @@ export default function ElementCard({
             {card.power}
           </div>
 
-          {/* 稀有度宝石 */}
+          {/* 法力消耗水晶 */}
           <div className="absolute top-2 right-2 z-20">
+            <div
+              className={cn(
+                'relative flex items-center justify-center font-black',
+                powerSizes[size],
+                'rounded-full',
+                'bg-gradient-to-br from-cyan-300 via-sky-500 to-indigo-700',
+                'border-2 border-cyan-200/70',
+                'shadow-lg shadow-sky-500/50'
+              )}
+              style={{
+                color: '#082f49',
+                animation: 'manaCrystalPulse 2s ease-in-out infinite',
+                filter: 'drop-shadow(0 0 4px rgba(56,189,248,0.6))',
+              }}
+            >
+              <svg viewBox="0 0 40 48" className="absolute inset-0 w-full h-full opacity-40">
+                <polygon
+                  points="20,2 36,16 32,44 8,44 4,16"
+                  fill="rgba(255,255,255,0.4)"
+                />
+              </svg>
+              <span className="relative z-10">{card.manaCost}</span>
+            </div>
+            {insufficientMana && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white/80 flex items-center justify-center animate-pulse">
+                <span className="text-[8px] font-black text-white">!</span>
+              </div>
+            )}
+          </div>
+
+          {/* 稀有度宝石 - 移到左上角力量值下方 */}
+          <div className="absolute top-2 right-2 z-20 translate-y-9">
             <div
               className={cn(
                 gemSizes[size],

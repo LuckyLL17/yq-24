@@ -76,48 +76,48 @@ const RARITY_BG = {
 let cardIdCounter = 0;
 export const generateCardId = () => `card_${++cardIdCounter}`;
 
-export const CARD_VARIANTS: Record<ElementType, Array<{ name: string; description: string; power: number; rarity: Card['rarity']; skillType?: string; skillValue?: number }>> = {
+export const CARD_VARIANTS: Record<ElementType, Array<{ name: string; description: string; power: number; rarity: Card['rarity']; manaCost: number; skillType?: string; skillValue?: number }>> = {
   fire: [
-    { name: '火焰弹', description: '发射一颗火球，造成伤害', power: 4, rarity: 'common' },
-    { name: '烈焰冲击', description: '强力的火焰攻击', power: 6, rarity: 'rare' },
-    { name: '炎爆术', description: '爆发性的火焰伤害', power: 8, rarity: 'epic' },
-    { name: '凤凰涅槃', description: '传说之火，浴火重生，造成大量伤害并恢复生命', power: 15, rarity: 'legendary', skillType: 'damage_heal', skillValue: 20 },
+    { name: '火焰弹', description: '发射一颗火球，造成伤害', power: 4, rarity: 'common', manaCost: 1 },
+    { name: '烈焰冲击', description: '强力的火焰攻击', power: 6, rarity: 'rare', manaCost: 2 },
+    { name: '炎爆术', description: '爆发性的火焰伤害', power: 8, rarity: 'epic', manaCost: 3 },
+    { name: '凤凰涅槃', description: '传说之火，浴火重生，造成大量伤害并恢复生命', power: 15, rarity: 'legendary', manaCost: 6, skillType: 'damage_heal', skillValue: 20 },
   ],
   water: [
-    { name: '水流弹', description: '发射水弹攻击敌人', power: 3, rarity: 'common' },
-    { name: '治愈之泉', description: '清澈的泉水带来治愈', power: 5, rarity: 'rare' },
-    { name: '潮汐之力', description: '海洋的力量涌动', power: 7, rarity: 'epic' },
-    { name: '海神之怒', description: '海神的愤怒席卷战场，造成伤害并冰冻敌人', power: 12, rarity: 'legendary', skillType: 'damage_freeze', skillValue: 2 },
+    { name: '水流弹', description: '发射水弹攻击敌人', power: 3, rarity: 'common', manaCost: 1 },
+    { name: '治愈之泉', description: '清澈的泉水带来治愈', power: 5, rarity: 'rare', manaCost: 2 },
+    { name: '潮汐之力', description: '海洋的力量涌动', power: 7, rarity: 'epic', manaCost: 3 },
+    { name: '海神之怒', description: '海神的愤怒席卷战场，造成伤害并冰冻敌人', power: 12, rarity: 'legendary', manaCost: 5, skillType: 'damage_freeze', skillValue: 2 },
   ],
   earth: [
-    { name: '岩石弹', description: '投掷坚硬的岩石', power: 4, rarity: 'common' },
-    { name: '大地护盾', description: '召唤岩石保护自己', power: 5, rarity: 'rare' },
-    { name: '山崩地裂', description: '大地的愤怒', power: 7, rarity: 'epic' },
-    { name: '泰坦降临', description: '泰坦巨人降世，造成毁灭伤害并获得护盾', power: 14, rarity: 'legendary', skillType: 'damage_shield', skillValue: 25 },
+    { name: '岩石弹', description: '投掷坚硬的岩石', power: 4, rarity: 'common', manaCost: 1 },
+    { name: '大地护盾', description: '召唤岩石保护自己', power: 5, rarity: 'rare', manaCost: 2 },
+    { name: '山崩地裂', description: '大地的愤怒', power: 7, rarity: 'epic', manaCost: 3 },
+    { name: '泰坦降临', description: '泰坦巨人降世，造成毁灭伤害并获得护盾', power: 14, rarity: 'legendary', manaCost: 6, skillType: 'damage_shield', skillValue: 25 },
   ],
   wind: [
-    { name: '风刃', description: '锋利的风之刃', power: 3, rarity: 'common' },
-    { name: '疾风步', description: '风之速度', power: 4, rarity: 'rare' },
-    { name: '龙卷风暴', description: '毁灭性的风暴', power: 6, rarity: 'epic' },
-    { name: '风暴之翼', description: '化身风暴，造成多次风刃伤害', power: 10, rarity: 'legendary', skillType: 'multi_hit', skillValue: 4 },
+    { name: '风刃', description: '锋利的风之刃', power: 3, rarity: 'common', manaCost: 1 },
+    { name: '疾风步', description: '风之速度', power: 4, rarity: 'rare', manaCost: 2 },
+    { name: '龙卷风暴', description: '毁灭性的风暴', power: 6, rarity: 'epic', manaCost: 3 },
+    { name: '风暴之翼', description: '化身风暴，造成多次风刃伤害', power: 10, rarity: 'legendary', manaCost: 5, skillType: 'multi_hit', skillValue: 4 },
   ],
   lightning: [
-    { name: '闪电箭', description: '发射一道闪电攻击敌人', power: 5, rarity: 'common' },
-    { name: '雷电链', description: '连锁闪电攻击多个目标', power: 7, rarity: 'rare' },
-    { name: '雷神之怒', description: '召唤天雷毁灭一切', power: 9, rarity: 'epic' },
-    { name: '雷霆万钧', description: '万雷齐发，造成巨额雷系伤害', power: 18, rarity: 'legendary', skillType: 'heavy_damage', skillValue: 0 },
+    { name: '闪电箭', description: '发射一道闪电攻击敌人', power: 5, rarity: 'common', manaCost: 2 },
+    { name: '雷电链', description: '连锁闪电攻击多个目标', power: 7, rarity: 'rare', manaCost: 3 },
+    { name: '雷神之怒', description: '召唤天雷毁灭一切', power: 9, rarity: 'epic', manaCost: 4 },
+    { name: '雷霆万钧', description: '万雷齐发，造成巨额雷系伤害', power: 18, rarity: 'legendary', manaCost: 7, skillType: 'heavy_damage', skillValue: 0 },
   ],
   light: [
-    { name: '圣光弹', description: '发射神圣光芒', power: 4, rarity: 'common' },
-    { name: '祝福之光', description: '神圣的祝福治愈伤痛', power: 6, rarity: 'rare' },
-    { name: '神圣审判', description: '以圣光审判邪恶', power: 8, rarity: 'epic' },
-    { name: '天使降临', description: '神圣天使降临，大量恢复生命并获得祝福', power: 10, rarity: 'legendary', skillType: 'big_heal', skillValue: 35 },
+    { name: '圣光弹', description: '发射神圣光芒', power: 4, rarity: 'common', manaCost: 1 },
+    { name: '祝福之光', description: '神圣的祝福治愈伤痛', power: 6, rarity: 'rare', manaCost: 2 },
+    { name: '神圣审判', description: '以圣光审判邪恶', power: 8, rarity: 'epic', manaCost: 3 },
+    { name: '天使降临', description: '神圣天使降临，大量恢复生命并获得祝福', power: 10, rarity: 'legendary', manaCost: 5, skillType: 'big_heal', skillValue: 35 },
   ],
   dark: [
-    { name: '暗影箭', description: '发射暗影能量', power: 4, rarity: 'common' },
-    { name: '暗影侵蚀', description: '暗影腐蚀敌人', power: 6, rarity: 'rare' },
-    { name: '深渊吞噬', description: '召唤深渊吞噬一切', power: 8, rarity: 'epic' },
-    { name: '深渊领主', description: '深渊之主现身，造成巨大伤害并吸取生命', power: 16, rarity: 'legendary', skillType: 'life_drain', skillValue: 15 },
+    { name: '暗影箭', description: '发射暗影能量', power: 4, rarity: 'common', manaCost: 1 },
+    { name: '暗影侵蚀', description: '暗影腐蚀敌人', power: 6, rarity: 'rare', manaCost: 2 },
+    { name: '深渊吞噬', description: '召唤深渊吞噬一切', power: 8, rarity: 'epic', manaCost: 3 },
+    { name: '深渊领主', description: '深渊之主现身，造成巨大伤害并吸取生命', power: 16, rarity: 'legendary', manaCost: 6, skillType: 'life_drain', skillValue: 15 },
   ],
 };
 
@@ -131,6 +131,7 @@ export const createCard = (element: ElementType): Card => {
     description: variant.description,
     power: variant.power,
     rarity: variant.rarity,
+    manaCost: variant.manaCost,
     skillType: variant.skillType as Card['skillType'],
     skillValue: variant.skillValue,
   };
@@ -147,6 +148,7 @@ export const createCardByName = (element: ElementType, name: string): Card | nul
     description: variant.description,
     power: variant.power,
     rarity: variant.rarity,
+    manaCost: variant.manaCost,
     skillType: variant.skillType as Card['skillType'],
     skillValue: variant.skillValue,
   };
@@ -184,6 +186,7 @@ export const createCardByRarityWeight = (rarityWeights?: Partial<Record<Rarity, 
     description: variant.description,
     power: variant.power,
     rarity: variant.rarity,
+    manaCost: variant.manaCost,
     skillType: variant.skillType as Card['skillType'],
     skillValue: variant.skillValue,
   };

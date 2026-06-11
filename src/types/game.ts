@@ -42,6 +42,7 @@ export interface Card {
   description: string;
   power: number;
   rarity: Rarity;
+  manaCost: number;
   skillType?: CardSkillType;
   skillValue?: number;
 }
@@ -308,6 +309,7 @@ export interface CollectedCard {
   description: string;
   power: number;
   rarity: Rarity;
+  manaCost: number;
   count: number;
   obtainedAt: number;
   skillType?: CardSkillType;

@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import ElementCard from './ElementCard';
 import CharacterDisplay from './CharacterDisplay';
 import ComboEffect from './ComboEffect';
+import ManaCrystals from './ManaCrystals';
 import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 import type { Card, Player } from '@/types/game';
@@ -111,6 +112,13 @@ function PlayerPanel({
             size="md"
           />
         </div>
+        {/* 法力水晶展示 */}
+        <div className={cn(
+          'mt-2 z-10',
+          isReversed && 'mt-0 mb-2'
+        )}>
+          <ManaCrystals current={player.mana} max={player.maxMana} size="sm" />
+        </div>
       </div>
 
       <div className="relative z-10 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-3 pb-3">
@@ -172,6 +180,10 @@ function PlayerPanel({
               const rotation = (index - middleIndex) * 3;
               const yOffset = Math.abs(index - middleIndex) * 3;
 
+              const selectedManaCost = selectedCards.reduce((sum, c) => sum + c.manaCost, 0);
+              const remainingMana = player.mana - selectedManaCost;
+              const wouldExceedMana = !isSelected && card.manaCost > remainingMana;
+
               return (
                 <div
                   key={card.id}
@@ -187,6 +199,7 @@ function PlayerPanel({
                     isSelected={!!isSelected}
                     onClick={() => handleCardClick(card)}
                     disabled={!isCurrentTurn || isAnimating}
+                    insufficientMana={wouldExceedMana}
                     size="sm"
                   />
                 </div>

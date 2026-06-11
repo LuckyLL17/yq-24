@@ -94,7 +94,7 @@ interface GameActions {
   synthesizeCard: (element: ElementType, cardName: string) => CollectedCard | null;
   getSynthesizeCost: (rarity: Rarity) => number;
   getDisassembleValue: (rarity: Rarity) => number;
-  getAllCardTemplates: () => Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; skillType?: string; skillValue?: number }>;
+  getAllCardTemplates: () => Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; manaCost: number; skillType?: string; skillValue?: number }>;
   equipMyCard: (cardId: string) => boolean;
   unequipMyCard: (cardId: string) => void;
   getEquippedMyCards: () => CollectedCard[];
@@ -456,6 +456,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     if (showLevelComplete) return;
     if (selectedCards.length >= 2) return;
     if (selectedCards.find((c) => c.id === card.id)) return;
+    const totalManaCost = selectedCards.reduce((sum, c) => sum + c.manaCost, 0) + card.manaCost;
+    if (totalManaCost > player.mana) return;
     set((state) => ({
       player: {
         ...state.player,
@@ -651,6 +653,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           ...s.player,
           hp: newPlayerHp,
           shield: newPlayerShield,
+          mana: s.player.mana - (card1.manaCost + card2.manaCost),
           hand: finalHand,
           deck: finalDeck,
           selectedCards: [],
@@ -2519,6 +2522,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           description: cardTemplate.description,
           power: cardTemplate.power,
           rarity: cardTemplate.rarity,
+          manaCost: cardTemplate.manaCost,
           skillType: cardTemplate.skillType as CollectedCard['skillType'],
           skillValue: cardTemplate.skillValue,
           count: 1,
@@ -2548,7 +2552,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   getAllCardTemplates: () => {
-    const templates: Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; skillType?: string; skillValue?: number }> = [];
+    const templates: Array<{ element: ElementType; name: string; description: string; power: number; rarity: Rarity; manaCost: number; skillType?: string; skillValue?: number }> = [];
     const elements: ElementType[] = ['fire', 'water', 'earth', 'wind', 'lightning', 'light', 'dark'];
     elements.forEach((element) => {
       CARD_VARIANTS[element].forEach((variant) => {
@@ -2558,6 +2562,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           description: variant.description,
           power: variant.power,
           rarity: variant.rarity,
+          manaCost: variant.manaCost,
           skillType: variant.skillType,
           skillValue: variant.skillValue,
         });
@@ -2790,6 +2795,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           description: card.description,
           power: card.power,
           rarity: card.rarity,
+          manaCost: card.manaCost,
           skillType: card.skillType,
           skillValue: card.skillValue,
           count: 1,
@@ -2876,6 +2882,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     if (targetPlayer.selectedCards.length >= 2) return;
     if (targetPlayer.selectedCards.find((c) => c.id === card.id)) return;
+    const totalManaCost = targetPlayer.selectedCards.reduce((sum, c) => sum + c.manaCost, 0) + card.manaCost;
+    if (totalManaCost > targetPlayer.mana) return;
     
     if (playerNum === 1) {
       set((state) => ({
@@ -3061,6 +3069,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             ...s.player,
             hp: newAttackerHp,
             shield: newAttackerShield,
+            mana: s.player.mana - (card1.manaCost + card2.manaCost),
             hand: finalHand,
             deck: finalDeck,
             selectedCards: [],
@@ -3083,6 +3092,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             ...s.player2,
             hp: newAttackerHp,
             shield: newAttackerShield,
+            mana: s.player2!.mana - (card1.manaCost + card2.manaCost),
             hand: finalHand,
             deck: finalDeck,
             selectedCards: [],

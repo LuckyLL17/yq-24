@@ -5,6 +5,7 @@ import ComboEffect from './ComboEffect';
 import UpgradePanel from './UpgradePanel';
 import LevelCompleteModal from './LevelCompleteModal';
 import Tutorial from './Tutorial';
+import ManaCrystals from './ManaCrystals';
 import { findCombo, ELEMENTS, CATEGORY_NAMES, CATEGORY_COLORS, getComboWithLevel, DIFFICULTY_CONFIG } from '@/data/gameData';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
@@ -339,6 +340,10 @@ export default function BattleScene() {
                 size="lg"
               />
             </div>
+            {/* 法力水晶展示 */}
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
+              <ManaCrystals current={player.mana} max={player.maxMana} size="lg" />
+            </div>
           </div>
         </div>
       </div>
@@ -499,6 +504,9 @@ export default function BattleScene() {
                   </span>
                 )}
                 <span className="text-cyan-400">
+                  💎 {selectedCards[0].manaCost + selectedCards[1].manaCost} 法力
+                </span>
+                <span className="text-amber-300">
                   ⏱️ {previewCombo.cooldown} 冷却
                 </span>
               </div>
@@ -539,6 +547,10 @@ export default function BattleScene() {
               const rotation = (index - middleIndex) * 4;
               const yOffset = Math.abs(index - middleIndex) * 5;
 
+              const selectedManaCost = selectedCards.reduce((sum, c) => sum + c.manaCost, 0);
+              const remainingMana = player.mana - selectedManaCost;
+              const wouldExceedMana = !isSelected && card.manaCost > remainingMana;
+
               return (
                 <div
                   key={card.id}
@@ -554,6 +566,7 @@ export default function BattleScene() {
                     isSelected={!!isSelected}
                     onClick={() => handleCardClick(card)}
                     disabled={isAnimating}
+                    insufficientMana={wouldExceedMana}
                     size="md"
                   />
                 </div>
