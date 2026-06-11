@@ -1,17 +1,20 @@
 import { useGameStore } from '@/store/gameStore';
+import { lazy, Suspense, useCallback } from 'react';
 import MainMenu from '@/components/MainMenu';
-import BattleScene from '@/components/BattleScene';
-import DuoBattleScene from '@/components/DuoBattleScene';
-import GameOverScreen from '@/components/GameOverScreen';
-import LevelCompleteModal from '@/components/LevelCompleteModal';
-import DailyQuests from '@/components/DailyQuests';
-import Shop from '@/components/Shop';
-import MyCards from '@/components/MyCards';
-import CardCollection from '@/components/CardCollection';
-import AccountManager from '@/components/AccountManager';
-import SaveManager from '@/components/SaveManager';
-import PauseMenu from '@/components/PauseMenu';
 import { useEffect } from 'react';
+import LoadingFallback from '@/components/LoadingFallback';
+
+const BattleScene = lazy(() => import('@/components/BattleScene'));
+const DuoBattleScene = lazy(() => import('@/components/DuoBattleScene'));
+const GameOverScreen = lazy(() => import('@/components/GameOverScreen'));
+const LevelCompleteModal = lazy(() => import('@/components/LevelCompleteModal'));
+const DailyQuests = lazy(() => import('@/components/DailyQuests'));
+const Shop = lazy(() => import('@/components/Shop'));
+const MyCards = lazy(() => import('@/components/MyCards'));
+const CardCollection = lazy(() => import('@/components/CardCollection'));
+const AccountManager = lazy(() => import('@/components/AccountManager'));
+const SaveManager = lazy(() => import('@/components/SaveManager'));
+const PauseMenu = lazy(() => import('@/components/PauseMenu'));
 
 export default function Home() {
   const { 
@@ -60,12 +63,15 @@ export default function Home() {
 
   const isDuoMode = mode === 'duo';
 
+  const onCloseSaveManager = useCallback(() => setShowSaveManager(false), [setShowSaveManager]);
+  const onClosePauseMenu = useCallback(() => resumeGame(), [resumeGame]);
+
   return (
     <div className="min-h-screen w-full">
       {phase === 'menu' && <MainMenu />}
       
       {(phase === 'battle' || phase === 'victory' || phase === 'defeat') && (
-        <>
+        <Suspense fallback={<LoadingFallback />}>
           {isDuoMode ? (
             <DuoBattleScene />
           ) : (
@@ -76,16 +82,44 @@ export default function Home() {
               {showLevelComplete && phase === 'battle' && <LevelCompleteModal />}
             </>
           )}
-        </>
+        </Suspense>
       )}
 
-      {!isDuoMode && <DailyQuests />}
-      {showShop && <Shop />}
-      {showMyCards && <MyCards />}
-      {showCollection && <CardCollection />}
-      {showAccountManager && <AccountManager />}
-      {showSaveManager && <SaveManager onClose={() => setShowSaveManager(false)} />}
-      {isPaused && <PauseMenu onClose={() => resumeGame()} />}
+      {!isDuoMode && (
+        <Suspense fallback={null}>
+          <DailyQuests />
+        </Suspense>
+      )}
+      {showShop && (
+        <Suspense fallback={null}>
+          <Shop />
+        </Suspense>
+      )}
+      {showMyCards && (
+        <Suspense fallback={null}>
+          <MyCards />
+        </Suspense>
+      )}
+      {showCollection && (
+        <Suspense fallback={null}>
+          <CardCollection />
+        </Suspense>
+      )}
+      {showAccountManager && (
+        <Suspense fallback={null}>
+          <AccountManager />
+        </Suspense>
+      )}
+      {showSaveManager && (
+        <Suspense fallback={null}>
+          <SaveManager onClose={onCloseSaveManager} />
+        </Suspense>
+      )}
+      {isPaused && (
+        <Suspense fallback={null}>
+          <PauseMenu onClose={onClosePauseMenu} />
+        </Suspense>
+      )}
     </div>
   );
 }
