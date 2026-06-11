@@ -8,14 +8,33 @@ import DailyQuests from '@/components/DailyQuests';
 import Shop from '@/components/Shop';
 import MyCards from '@/components/MyCards';
 import CardCollection from '@/components/CardCollection';
+import AccountManager from '@/components/AccountManager';
+import SaveManager from '@/components/SaveManager';
+import PauseMenu from '@/components/PauseMenu';
 import { useEffect } from 'react';
 
 export default function Home() {
-  const { phase, mode, showLevelComplete, showShop, showMyCards, showCollection, checkDailyRefresh, saveGame } = useGameStore();
+  const { 
+    phase, 
+    mode, 
+    showLevelComplete, 
+    showShop, 
+    showMyCards, 
+    showCollection, 
+    checkDailyRefresh, 
+    saveGame,
+    showAccountManager,
+    showSaveManager,
+    isPaused,
+    initAccountSystem,
+    resumeGame,
+    setShowSaveManager,
+  } = useGameStore();
 
   useEffect(() => {
+    initAccountSystem();
     checkDailyRefresh();
-  }, [checkDailyRefresh]);
+  }, [initAccountSystem, checkDailyRefresh]);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -25,6 +44,19 @@ export default function Home() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveGame]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && phase === 'battle' && !isPaused) {
+        useGameStore.getState().pauseGame();
+      } else if (e.key === 'Escape' && isPaused) {
+        resumeGame();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phase, isPaused, resumeGame]);
 
   const isDuoMode = mode === 'duo';
 
@@ -51,6 +83,9 @@ export default function Home() {
       {showShop && <Shop />}
       {showMyCards && <MyCards />}
       {showCollection && <CardCollection />}
+      {showAccountManager && <AccountManager />}
+      {showSaveManager && <SaveManager onClose={() => setShowSaveManager(false)} />}
+      {isPaused && <PauseMenu onClose={() => resumeGame()} />}
     </div>
   );
 }

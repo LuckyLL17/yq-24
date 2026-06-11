@@ -389,3 +389,39 @@ export interface GameState {
   showBattleRating: boolean;
   highestHitDamage: number;
 }
+
+export interface GameAccount {
+  id: string;
+  name: string;
+  avatar: string;
+  createdAt: number;
+  lastPlayedAt: number;
+}
+
+export interface GameSaveSlot {
+  slotId: 1 | 2 | 3;
+  accountId: string;
+  slotName: string;
+  permanentData: {
+    elementEssence: number;
+    comboLevels: Player['comboLevels'];
+    dailyQuests: DailyQuestState;
+    cosmetics: PlayerCosmetics;
+    tutorialCompleted?: boolean;
+  };
+  battleData: {
+    phase: GameState['phase'];
+    mode: GameMode;
+    difficulty: Difficulty;
+    turn: number;
+    player: Player;
+    enemy: Enemy | null;
+    wave: number;
+    level: number;
+    maxLevel: number;
+    score: number;
+    streak: number;
+    comboHistory: GameState['comboHistory'];
+  } | null;
+  savedAt: number;
+}

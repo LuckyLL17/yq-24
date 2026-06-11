@@ -1,7 +1,14 @@
 import { create } from 'zustand';
-import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity, DuoScreenLayout, CardTag, CardNote } from '@/types/game';
+import type { GameState, Card, ComboSkill, Player, GameMode, BossIntentType, Difficulty, ComboCategory, PlayerCosmetics, TutorialStep, CollectedCard, ElementType, Rarity, DuoScreenLayout, CardTag, CardNote, GameAccount, GameSaveSlot } from '@/types/game';
 import { createDeck, createPlayer, createEnemy, findCombo, ENEMIES, getComboLevel, getComboWithLevel, COMBOS, DIFFICULTY_CONFIG, CLASSIC_LEVELS, QUICK_LEVELS, generateDailyQuests, getTodayString, REFRESH_COST, CARD_PACKS, CARD_BORDERS, SHOP_AVATARS, CARD_VARIANTS, DISASSEMBLE_ESSENCE, SYNTHESIZE_ESSENCE, RARITY_NAMES, createCardByRarityWeight } from '@/data/gameData';
-import { savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, hasBattleSave, hasPermanentSave } from '@/lib/gameSave';
+import { 
+  savePermanentData, saveBattleData, loadPermanentData, loadBattleData, clearBattleSave, 
+  hasBattleSave, hasPermanentSave, getAccounts, createAccount as libCreateAccount, 
+  deleteAccount as libDeleteAccount, getCurrentAccount, setCurrentAccountId, 
+  updateAccount as libUpdateAccount, getSaveSlots, saveToSlot, 
+  deleteSaveSlot as libDeleteSaveSlot, renameSaveSlot as libRenameSaveSlot,
+  migrateLegacySavesToAccount, getSaveSlot as libGetSaveSlot
+} from '@/lib/gameSave';
 
 interface GameActions {
   startBattle: (mode?: GameMode, difficulty?: Difficulty) => void;
@@ -122,6 +129,32 @@ interface GameActions {
   saveCardNote: (cardId: string, content: string, tags: string[]) => CardNote | null;
   deleteCardNote: (cardId: string) => boolean;
   getCardsByTag: (tagId: string) => CollectedCard[];
+
+  currentAccount: GameAccount | null;
+  accounts: GameAccount[];
+  showAccountManager: boolean;
+  showSaveManager: boolean;
+  isPaused: boolean;
+
+  getAllAccounts: () => GameAccount[];
+  createNewAccount: (name: string, avatar?: string) => GameAccount;
+  removeAccount: (accountId: string) => void;
+  switchAccount: (accountId: string) => void;
+  modifyAccount: (updates: Partial<Omit<GameAccount, 'id' | 'createdAt'>>) => void;
+  toggleAccountManager: () => void;
+  toggleSaveManager: () => void;
+  setShowAccountManager: (show: boolean) => void;
+  setShowSaveManager: (show: boolean) => void;
+  pauseGame: () => void;
+  resumeGame: () => void;
+  saveGameToSlot: (slotId: 1 | 2 | 3, slotName?: string) => GameSaveSlot;
+  loadGameFromSlot: (slotId: 1 | 2 | 3) => boolean;
+  removeSaveSlot: (slotId: 1 | 2 | 3) => void;
+  renameGameSaveSlot: (slotId: 1 | 2 | 3, slotName: string) => void;
+  getAccountSaveSlots: () => GameSaveSlot[];
+  getAccountSaveSlot: (slotId: 1 | 2 | 3) => GameSaveSlot | null;
+  restartGame: () => void;
+  initAccountSystem: () => void;
 }
 
 const initialPlayerState = (): Player => {
@@ -162,11 +195,20 @@ const initialCosmeticsState = (): PlayerCosmetics => ({
   cardNotes: [],
 });
 
-const loadInitialState = (): GameState => {
-  const baseState: GameState = {
-    phase: 'menu',
-    mode: 'classic',
-    difficulty: 'normal',
+const loadInitialState = (): GameState & {
+  currentAccount: GameAccount | null;
+  accounts: GameAccount[];
+  showAccountManager: boolean;
+  showSaveManager: boolean;
+  isPaused: boolean;
+} => {
+  const accounts = getAccounts();
+  const currentAccount = getCurrentAccount();
+
+  const baseState = {
+    phase: 'menu' as const,
+    mode: 'classic' as GameMode,
+    difficulty: 'normal' as Difficulty,
     turn: 1,
     player: initialPlayerState(),
     enemy: null,
@@ -195,13 +237,13 @@ const loadInitialState = (): GameState => {
     tutorial: {
       tutorialCompleted: false,
       showTutorial: false,
-      currentStep: 'welcome',
+      currentStep: 'welcome' as const,
     },
     myCardUsedIds: [],
     levelCardReward: null,
     player2: null,
-    currentDuoPlayer: 1,
-    duoLayout: 'horizontal',
+    currentDuoPlayer: 1 as const,
+    duoLayout: 'horizontal' as const,
     player2Shaking: false,
     duoWinner: null,
     maxStreak: 0,
@@ -213,6 +255,11 @@ const loadInitialState = (): GameState => {
     battleRating: null,
     showBattleRating: false,
     highestHitDamage: 0,
+    currentAccount,
+    accounts,
+    showAccountManager: accounts.length === 0,
+    showSaveManager: false,
+    isPaused: false,
   };
 
   const permanentData = loadPermanentData();
@@ -3300,5 +3347,266 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       .filter((n) => n.tags.includes(tagId))
       .map((n) => n.cardId);
     return state.cosmetics.collection.filter((c) => noteCardIds.includes(c.id));
+  },
+
+  getAllAccounts: () => getAccounts(),
+
+  createNewAccount: (name: string, avatar?: string): GameAccount => {
+    const account = libCreateAccount(name, avatar);
+    migrateLegacySavesToAccount(account.id);
+    set({ 
+      currentAccount: account, 
+      accounts: getAccounts(),
+      showAccountManager: false,
+    });
+    return account;
+  },
+
+  removeAccount: (accountId: string): void => {
+    libDeleteAccount(accountId);
+    set({ 
+      accounts: getAccounts(),
+      currentAccount: getCurrentAccount(),
+    });
+  },
+
+  switchAccount: (accountId: string): void => {
+    setCurrentAccountId(accountId);
+    const account = getCurrentAccount();
+    set({ currentAccount: account, accounts: getAccounts() });
+
+    const slot = libGetSaveSlot(accountId, 1);
+    if (slot) {
+      const permanentData = slot.permanentData;
+      set((state) => ({
+        elementEssence: permanentData.elementEssence ?? 0,
+        player: {
+          ...state.player,
+          comboLevels: permanentData.comboLevels ?? state.player.comboLevels,
+        },
+        dailyQuests: permanentData.dailyQuests ?? state.dailyQuests,
+        tutorial: {
+          ...state.tutorial,
+          tutorialCompleted: permanentData.tutorialCompleted ?? false,
+        },
+        cosmetics: {
+          ...initialCosmeticsState(),
+          ...permanentData.cosmetics,
+        },
+      }));
+    }
+
+    clearBattleSave();
+    set({ phase: 'menu' });
+  },
+
+  modifyAccount: (updates: Partial<Omit<GameAccount, 'id' | 'createdAt'>>): void => {
+    const account = get().currentAccount;
+    if (!account) return;
+    libUpdateAccount(account.id, updates);
+    set({ 
+      currentAccount: getCurrentAccount(),
+      accounts: getAccounts(),
+    });
+  },
+
+  toggleAccountManager: (): void => {
+    set((state) => ({ showAccountManager: !state.showAccountManager }));
+  },
+
+  toggleSaveManager: (): void => {
+    set((state) => ({ showSaveManager: !state.showSaveManager }));
+  },
+
+  setShowAccountManager: (show: boolean): void => {
+    set({ showAccountManager: show });
+  },
+
+  setShowSaveManager: (show: boolean): void => {
+    set({ showSaveManager: show });
+  },
+
+  pauseGame: (): void => {
+    const { phase } = get();
+    if (phase !== 'battle') return;
+    set({ isPaused: true });
+  },
+
+  resumeGame: (): void => {
+    set({ isPaused: false });
+  },
+
+  saveGameToSlot: (slotId: 1 | 2 | 3, slotName?: string): GameSaveSlot => {
+    const state = get();
+    const account = state.currentAccount;
+    if (!account) throw new Error('No account selected');
+
+    get().saveGame();
+
+    return saveToSlot(account.id, slotId, {
+      permanentData: {
+        elementEssence: state.elementEssence,
+        comboLevels: state.player.comboLevels,
+        dailyQuests: state.dailyQuests,
+        cosmetics: state.cosmetics,
+        tutorialCompleted: state.tutorial.tutorialCompleted,
+      },
+      battleData: state.phase === 'battle' && state.enemy ? {
+        phase: state.phase,
+        mode: state.mode,
+        difficulty: state.difficulty,
+        turn: state.turn,
+        player: state.player,
+        enemy: state.enemy,
+        wave: state.wave,
+        level: state.level,
+        maxLevel: state.maxLevel,
+        score: state.score,
+        streak: state.streak,
+        comboHistory: state.comboHistory,
+      } : null,
+      slotName,
+    });
+  },
+
+  loadGameFromSlot: (slotId: 1 | 2 | 3): boolean => {
+    const state = get();
+    const account = state.currentAccount;
+    if (!account) return false;
+
+    const slot = libGetSaveSlot(account.id, slotId);
+    if (!slot) return false;
+
+    const permanentData = slot.permanentData;
+    set((s) => ({
+      elementEssence: permanentData.elementEssence ?? 0,
+      player: {
+        ...s.player,
+        comboLevels: permanentData.comboLevels ?? s.player.comboLevels,
+      },
+      dailyQuests: permanentData.dailyQuests ?? s.dailyQuests,
+      tutorial: {
+        ...s.tutorial,
+        tutorialCompleted: permanentData.tutorialCompleted ?? false,
+      },
+      cosmetics: {
+        ...initialCosmeticsState(),
+        ...permanentData.cosmetics,
+      },
+    }));
+
+    savePermanentData({
+      elementEssence: permanentData.elementEssence,
+      comboLevels: permanentData.comboLevels,
+      dailyQuests: permanentData.dailyQuests,
+      cosmetics: permanentData.cosmetics,
+      tutorialCompleted: permanentData.tutorialCompleted,
+    });
+
+    if (slot.battleData) {
+      const battleData = slot.battleData;
+      set({
+        phase: battleData.phase,
+        mode: battleData.mode,
+        difficulty: battleData.difficulty,
+        turn: battleData.turn,
+        player: {
+          ...battleData.player,
+          comboLevels: permanentData.comboLevels,
+        },
+        enemy: battleData.enemy,
+        wave: battleData.wave,
+        level: battleData.level,
+        maxLevel: battleData.maxLevel,
+        score: battleData.score,
+        streak: battleData.streak,
+        comboHistory: battleData.comboHistory,
+        isAnimating: false,
+        currentCombo: null,
+        showComboEffect: false,
+        floatingTexts: [],
+        showLevelComplete: false,
+        levelEssenceReward: 0,
+        isPaused: false,
+        showSaveManager: false,
+      });
+
+      saveBattleData({
+        phase: battleData.phase,
+        mode: battleData.mode,
+        difficulty: battleData.difficulty,
+        turn: battleData.turn,
+        player: battleData.player,
+        enemy: battleData.enemy,
+        wave: battleData.wave,
+        level: battleData.level,
+        maxLevel: battleData.maxLevel,
+        score: battleData.score,
+        streak: battleData.streak,
+        comboHistory: battleData.comboHistory,
+      });
+    } else {
+      set({ 
+        phase: 'menu',
+        isPaused: false,
+        showSaveManager: false,
+      });
+      clearBattleSave();
+    }
+
+    return true;
+  },
+
+  removeSaveSlot: (slotId: 1 | 2 | 3): void => {
+    const account = get().currentAccount;
+    if (!account) return;
+    libDeleteSaveSlot(account.id, slotId);
+  },
+
+  renameGameSaveSlot: (slotId: 1 | 2 | 3, slotName: string): void => {
+    const account = get().currentAccount;
+    if (!account) return;
+    libRenameSaveSlot(account.id, slotId, slotName);
+  },
+
+  getAccountSaveSlots: (): GameSaveSlot[] => {
+    const account = get().currentAccount;
+    if (!account) return [];
+    return getSaveSlots(account.id);
+  },
+
+  getAccountSaveSlot: (slotId: 1 | 2 | 3): GameSaveSlot | null => {
+    const account = get().currentAccount;
+    if (!account) return null;
+    return libGetSaveSlot(account.id, slotId);
+  },
+
+  restartGame: (): void => {
+    const state = get();
+    const { mode, difficulty } = state;
+
+    clearBattleSave();
+    state.startBattle(mode, difficulty);
+  },
+
+  initAccountSystem: (): void => {
+    const accounts = getAccounts();
+    const currentAccount = getCurrentAccount();
+    
+    set({
+      accounts,
+      currentAccount,
+      showAccountManager: accounts.length === 0,
+    });
+
+    if (accounts.length === 0 && (hasPermanentSave() || hasBattleSave())) {
+      const newAccount = libCreateAccount('默认玩家');
+      migrateLegacySavesToAccount(newAccount.id);
+      set({
+        accounts: getAccounts(),
+        currentAccount: getCurrentAccount(),
+        showAccountManager: false,
+      });
+    }
   },
 }));

@@ -46,6 +46,7 @@ export default function BattleScene() {
     getStreakDamageBonus,
     showStreakBonus,
     maxStreak,
+    pauseGame,
   } = useGameStore();
 
   const selectedCards = player.selectedCards;
@@ -116,12 +117,22 @@ export default function BattleScene() {
 
       {/* 顶部状态栏 */}
       <div className="relative z-20 flex items-center justify-between px-6 py-3 bg-gradient-to-b from-black/60 to-transparent backdrop-blur-sm">
-        <button
-          onClick={goToMenu}
-          className="px-4 py-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30"
-        >
-          ← 返回菜单
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToMenu}
+            className="px-4 py-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30"
+          >
+            ← 返回菜单
+          </button>
+          <button
+            onClick={pauseGame}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-slate-800/60 to-slate-700/60 hover:from-slate-700/60 hover:to-slate-600/60 text-white/70 hover:text-white transition-all duration-300 border border-white/10 hover:border-amber-500/30 flex items-center gap-1.5"
+            title="暂停游戏 (ESC)"
+          >
+            <span>⏸️</span>
+            <span>暂停</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-6">
           <div className="text-center">

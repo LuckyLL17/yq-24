@@ -6,7 +6,12 @@ import type { GameMode, Difficulty } from '@/types/game';
 import { getBattleSaveInfo } from '@/lib/gameSave';
 
 export default function MainMenu() {
-  const { startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial, toggleMyCards, getCollectionStats, startDuo, toggleCollection } = useGameStore();
+  const { 
+    startBattle, startChallenge, startEndless, startQuick, toggleDailyQuests, dailyQuests, 
+    continueGame, hasSave, toggleShop, elementEssence, isTutorialCompleted, startTutorial, 
+    toggleMyCards, getCollectionStats, startDuo, toggleCollection,
+    currentAccount, toggleAccountManager, toggleSaveManager
+  } = useGameStore();
   const [showCodex, setShowCodex] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [saveInfo, setSaveInfo] = useState<ReturnType<typeof getBattleSaveInfo>>(null);
@@ -337,8 +342,62 @@ export default function MainMenu() {
               ))}
             </div>
 
+            {/* 账号信息 */}
+            {currentAccount && (
+              <div className="w-full max-w-2xl mb-4">
+                <button
+                  onClick={toggleAccountManager}
+                  className="group w-full overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-800/80 via-slate-700/80 to-slate-800/80 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 rounded-2xl border border-white/20 group-hover:border-amber-500/40 transition-colors duration-300" />
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="text-4xl">{currentAccount.avatar}</div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                        {currentAccount.name}
+                      </h3>
+                      <p className="text-white/50 text-xs">
+                        最近游玩: {new Date(currentAccount.lastPlayedAt).toLocaleString('zh-CN', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-purple-500/30 text-purple-300 text-xs font-bold flex items-center gap-1">
+                        💎 {elementEssence}
+                      </span>
+                      <span className="text-white/40 text-sm">切换账号 →</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {/* 功能按钮 */}
             <div className="flex justify-center gap-4 flex-wrap">
+              <button
+                onClick={toggleAccountManager}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500/30 to-blue-500/30 hover:from-sky-500/50 hover:to-blue-500/50 text-white/80 hover:text-white transition-all duration-300 border border-sky-500/30 hover:border-sky-400/50 flex items-center gap-2 relative"
+              >
+                <span>👤</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>账号</span>
+                {currentAccount && (
+                  <span className="px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 text-xs font-bold">
+                    {currentAccount.avatar}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={toggleSaveManager}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500/30 to-purple-500/30 hover:from-violet-500/50 hover:to-purple-500/50 text-white/80 hover:text-white transition-all duration-300 border border-violet-500/30 hover:border-violet-400/50 flex items-center gap-2 relative"
+              >
+                <span>💾</span>
+                <span style={{ fontFamily: "'Cinzel Decorative', serif" }}>存档</span>
+              </button>
               <button
                 onClick={toggleShop}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/50 hover:to-orange-500/50 text-white/80 hover:text-white transition-all duration-300 border border-amber-500/30 hover:border-amber-400/50 flex items-center gap-2 relative"
