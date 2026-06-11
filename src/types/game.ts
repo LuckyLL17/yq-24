@@ -296,9 +296,11 @@ export interface CardTag {
 }
 
 export interface CardNote {
+  id: string;
   cardId: string;
   content: string;
   tags: string[];
+  createdAt: number;
   updatedAt: number;
 }
 
@@ -417,6 +419,8 @@ export interface GameSaveSlot {
     difficulty: Difficulty;
     turn: number;
     player: Player;
+    player2: Player | null;
+    currentDuoPlayer: 1 | 2;
     enemy: Enemy | null;
     wave: number;
     level: number;
@@ -424,6 +428,7 @@ export interface GameSaveSlot {
     score: number;
     streak: number;
     comboHistory: GameState['comboHistory'];
+    comboCooldowns: Player['comboCooldowns'];
   } | null;
   savedAt: number;
 }

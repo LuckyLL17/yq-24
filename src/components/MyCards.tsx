@@ -320,7 +320,6 @@ export default function MyCards() {
                       )}
                       style={{
                         backgroundColor: tagFilter === tag.id ? tag.color : undefined,
-                        ringColor: tagFilter === tag.id ? tag.color : undefined,
                       }}
                     >
                       <span
@@ -480,8 +479,8 @@ function CollectionView({
   onUnequip: (cardId: string) => void;
   isCardEquipped: (cardId: string) => boolean;
   onNote: (card: CollectedCard) => void;
-  getCardNote: (cardId: string) => ReturnType<typeof useGameStore.getState.getCardNote>;
-  cardTags: ReturnType<typeof useGameStore.getState.getCardTags>;
+  getCardNote: (cardId: string) => ReturnType<ReturnType<typeof useGameStore.getState>['getCardNote']>;
+  cardTags: ReturnType<ReturnType<typeof useGameStore.getState>['getCardTags']>;
 }) {
   if (cards.length === 0) {
     return (
@@ -709,7 +708,7 @@ function SynthesizeView({
   );
 }
 
-function CollectionCard({ card, isEquipped, onEquip, onUnequip, onNote, note, cardTags }: { card: CollectedCard; isEquipped: boolean; onEquip: () => void; onUnequip: () => void; onNote: () => void; note?: ReturnType<typeof useGameStore.getState.getCardNote>; cardTags: ReturnType<typeof useGameStore.getState.getCardTags>; }) {
+function CollectionCard({ card, isEquipped, onEquip, onUnequip, onNote, note, cardTags }: { card: CollectedCard; isEquipped: boolean; onEquip: () => void; onUnequip: () => void; onNote: () => void; note?: ReturnType<ReturnType<typeof useGameStore.getState>['getCardNote']>; cardTags: ReturnType<ReturnType<typeof useGameStore.getState>['getCardTags']>; }) {
   const rarityColors: Record<Rarity, string> = {
     common: 'text-gray-400',
     rare: 'text-blue-400',

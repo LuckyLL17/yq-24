@@ -221,7 +221,6 @@ export default function CardNoteModal({ card, onClose }: CardNoteModalProps) {
                     )}
                     style={{
                       backgroundColor: selectedTags.includes(tag.id) ? tag.color : undefined,
-                      ringColor: selectedTags.includes(tag.id) ? tag.color : undefined,
                     }}
                   >
                     <span

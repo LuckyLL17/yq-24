@@ -354,6 +354,8 @@ export const migrateLegacySavesToAccount = (accountId: string): void => {
           difficulty: battleData.difficulty,
           turn: battleData.turn,
           player: battleData.player,
+          player2: (battleData as any).player2 || null,
+          currentDuoPlayer: (battleData as any).currentDuoPlayer || 1,
           enemy: battleData.enemy,
           wave: battleData.wave,
           level: battleData.level,
@@ -361,6 +363,7 @@ export const migrateLegacySavesToAccount = (accountId: string): void => {
           score: battleData.score,
           streak: battleData.streak,
           comboHistory: battleData.comboHistory,
+          comboCooldowns: (battleData as any).comboCooldowns || [],
         } : null,
         slotName: '自动迁移存档',
       });
